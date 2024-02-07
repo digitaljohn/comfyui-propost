@@ -1,7 +1,8 @@
 # Filmgrainer - by Lars Ole Pontoppidan - MIT License
 
 from PIL import Image, ImageFilter
-import os 
+import os
+import numpy as np
 
 import filmgrainer.graingamma as graingamma
 import filmgrainer.graingen as graingen
@@ -48,11 +49,12 @@ def _getGrainMask(img_width:int, img_height:int, saturation:float, grayscale:boo
     return mask
 
 
-def process(file_in:str, scale:float, src_gamma:float, grain_power:float, shadows:float,
-            highs:float, grain_type:int, grain_sat:float, gray_scale:bool, sharpen:int, seed:int, file_out=None):
+def process(image, scale:float, src_gamma:float, grain_power:float, shadows:float,
+            highs:float, grain_type:int, grain_sat:float, gray_scale:bool, sharpen:int, seed:int):
             
-    print("Loading: " + file_in)
-    img = Image.open(file_in).convert("RGB")
+    image = np.clip(image, 0, 1)  # Ensure the values are within [0, 1]
+    image = (image * 255).astype(np.uint8)
+    img = Image.fromarray(image).convert("RGB")
     org_width = img.size[0]
     org_height = img.size[1]
     
@@ -109,5 +111,4 @@ def process(file_in:str, scale:float, src_gamma:float, grain_power:float, shadow
         for x in range(sharpen):
             img = img.filter(ImageFilter.SHARPEN)
 
-    print("Saving: " + file_out)
-    img.save(file_out, quality=97)
+    return np.array(img).astype('float32') / 255.0

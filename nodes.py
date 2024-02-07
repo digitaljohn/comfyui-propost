@@ -1,5 +1,15 @@
+import sys
+import os
 import torch
 import numpy as np
+
+# Get the directory of the current file
+current_file_directory = os.path.dirname(os.path.abspath(__file__))
+
+# Append this directory to sys.path
+sys.path.append(current_file_directory)
+
+import filmgrainer.filmgrainer as filmgrainer
 
 class ProPostVignette:
     def __init__(self):
@@ -59,24 +69,9 @@ class ProPostVignette:
 
         return np.clip(image * vignette[..., np.newaxis], 0, 1)
 
-
-
-
-
-        # self.gray_scale = False
-        # self.grain_type = 1
-        # self.grain_sat = 0.5        
-        # self.grain_power = 0.7
-        # self.shadows = 0.2
-        # self.highs = 0.2
-        # self.scale = 1.0
-        # self.sharpen = 0
-        # self.src_gamma = 1.0
-        # self.seed = 1
-        # self.file_in = None
-        # self.file_out = None
-
 class ProPostFilmGrain:
+    grain_types = ["Fine", "Fine Simple", "Coarse", "Coarser"]
+
     def __init__(self):
         pass
     
@@ -85,14 +80,10 @@ class ProPostFilmGrain:
         return {
             "required": {
                 "image": ("IMAGE",),
-                "gray_scale": ("BOOL", {
+                "gray_scale": ("BOOLEAN", {
                     "default": False
                 }),
-                "grain_type": ("INT", {
-                    "default": 1,
-                    "min": 1,
-                    "max": 4
-                }),
+                "grain_type": (s.grain_types,),
                 "grain_sat": ("FLOAT", {
                     "default": 0.5,
                     "min": 0.0,
@@ -151,15 +142,19 @@ class ProPostFilmGrain:
  
     CATEGORY = "propost/Film Grain"
  
-    def filmgrain_image(self, image: torch.Tensor, gray_scale: bool, grain_type: int, grain_sat: float, grain_power: float, shadows: float, highs: float, scale: float, sharpen: int, src_gamma: float, seed: int):
+    def filmgrain_image(self, image: torch.Tensor, gray_scale: bool, grain_type: str, grain_sat: float, grain_power: float, shadows: float, highs: float, scale: float, sharpen: int, src_gamma: float, seed: int):
         batch_size, height, width, _ = image.shape
         result = torch.zeros_like(image)
+
+        # find index of grain_type
+        grain_type_index = self.grain_types.index(grain_type) + 1;
+
 
         for b in range(batch_size):
             tensor_image = image[b].numpy()
 
             # Apply vignette
-            vignette_image = self.apply_vignette(tensor_image, 1.0)
+            vignette_image = self.apply_filmgrain(tensor_image, gray_scale, grain_type_index, grain_sat, grain_power, shadows, highs, scale, sharpen, src_gamma, seed)
 
             tensor = torch.from_numpy(vignette_image).unsqueeze(0)
             result[b] = tensor
@@ -167,20 +162,10 @@ class ProPostFilmGrain:
         return (result,)
 
     def apply_filmgrain(self, image, gray_scale, grain_type, grain_sat, grain_power, shadows, highs, scale, sharpen, src_gamma, seed):
-        if grain_sat == 0:
-            return image
-
-        height, width, _ = image.shape
-        x = np.linspace(-1, 1, width)
-        y = np.linspace(-1, 1, height)
-        X, Y = np.meshgrid(x, y)
-        radius = np.sqrt(X ** 2 + Y ** 2)
-
-        radius = radius / np.max(radius)
-        opacity = np.clip(grain_sat, 0, 1)
-        vignette = 1 - radius * opacity
-
-        return np.clip(image * vignette[..., np.newaxis], 0, 1)
+        out_image = filmgrainer.process(image, scale, src_gamma, 
+            grain_power, shadows, highs, grain_type, 
+            grain_sat, gray_scale, sharpen, seed)
+        return out_image
  
  
 # A dictionary that contains all nodes you want to export with their names
