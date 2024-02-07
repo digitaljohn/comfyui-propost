@@ -36,7 +36,7 @@ class ProPostVignette:
             tensor_image = image[b].numpy()
 
             # Apply vignette
-            vignette_image = self.apply_vignette(tensor_image, vignette)
+            vignette_image = self.apply_vignette(tensor_image, intensity)
 
             tensor = torch.from_numpy(vignette_image).unsqueeze(0)
             result[b] = tensor
