@@ -1,0 +1,489 @@
+{
+  "last_node_id": 21,
+  "last_link_id": 19,
+  "nodes": [
+    {
+      "id": 12,
+      "type": "PreviewImage",
+      "pos": [
+        1086,
+        419
+      ],
+      "size": [
+        221.6767578125,
+        308.8388977050781
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 11
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 15,
+      "type": "PreviewImage",
+      "pos": [
+        1085,
+        790
+      ],
+      "size": [
+        223.5283203125,
+        301.1865539550781
+      ],
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 13
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 17,
+      "type": "PreviewImage",
+      "pos": [
+        1092,
+        1158
+      ],
+      "size": [
+        209.18479848632842,
+        276.86214584960976
+      ],
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 16
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    },
+    {
+      "id": 10,
+      "type": "LoadImage",
+      "pos": [
+        89,
+        726
+      ],
+      "size": [
+        315,
+        313.9999885559082
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            10,
+            15
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": null,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "detailed_00004_.png",
+        "image"
+      ]
+    },
+    {
+      "id": 11,
+      "type": "ProPostVignette",
+      "pos": [
+        494,
+        597
+      ],
+      "size": [
+        210,
+        58
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 10
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            11,
+            14
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ProPostVignette"
+      },
+      "widgets_values": [
+        0.5
+      ]
+    },
+    {
+      "id": 16,
+      "type": "ProPostFilmGrain",
+      "pos": [
+        755,
+        1065
+      ],
+      "size": {
+        "0": 277.0048828125,
+        "1": 298
+      },
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 15
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            16
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ProPostFilmGrain"
+      },
+      "widgets_values": [
+        false,
+        "Fine",
+        0.5,
+        0.7,
+        0.2,
+        0.2,
+        1,
+        0,
+        1,
+        892,
+        "randomize"
+      ]
+    },
+    {
+      "id": 14,
+      "type": "ProPostFilmGrain",
+      "pos": [
+        755,
+        696
+      ],
+      "size": [
+        277.00486755371094,
+        298
+      ],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 14
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            13
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ProPostFilmGrain"
+      },
+      "widgets_values": [
+        false,
+        "Coarser",
+        0.5,
+        0.7,
+        0.2,
+        0.2,
+        1.5,
+        0,
+        1,
+        696,
+        "randomize"
+      ]
+    },
+    {
+      "id": 18,
+      "type": "LoadImage",
+      "pos": [
+        1351,
+        710
+      ],
+      "size": [
+        315,
+        314.0000190734863
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            17
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": null,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "detailed_00010_.png",
+        "image"
+      ]
+    },
+    {
+      "id": 20,
+      "type": "ProPostFilmGrain",
+      "pos": [
+        1965,
+        718
+      ],
+      "size": {
+        "0": 277.0048828125,
+        "1": 298
+      },
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 18
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            19
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ProPostFilmGrain"
+      },
+      "widgets_values": [
+        true,
+        "Coarser",
+        0.5,
+        0.4,
+        0.2,
+        0.2,
+        2,
+        1,
+        1.19,
+        252,
+        "randomize"
+      ]
+    },
+    {
+      "id": 19,
+      "type": "ProPostVignette",
+      "pos": [
+        1713,
+        740
+      ],
+      "size": {
+        "0": 210,
+        "1": 58
+      },
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 17
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            18
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ProPostVignette"
+      },
+      "widgets_values": [
+        2
+      ]
+    },
+    {
+      "id": 21,
+      "type": "PreviewImage",
+      "pos": [
+        2315,
+        763
+      ],
+      "size": [
+        219.99056374666384,
+        287.06275686075355
+      ],
+      "flags": {},
+      "order": 10,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 19
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      }
+    }
+  ],
+  "links": [
+    [
+      10,
+      10,
+      0,
+      11,
+      0,
+      "IMAGE"
+    ],
+    [
+      11,
+      11,
+      0,
+      12,
+      0,
+      "IMAGE"
+    ],
+    [
+      13,
+      14,
+      0,
+      15,
+      0,
+      "IMAGE"
+    ],
+    [
+      14,
+      11,
+      0,
+      14,
+      0,
+      "IMAGE"
+    ],
+    [
+      15,
+      10,
+      0,
+      16,
+      0,
+      "IMAGE"
+    ],
+    [
+      16,
+      16,
+      0,
+      17,
+      0,
+      "IMAGE"
+    ],
+    [
+      17,
+      18,
+      0,
+      19,
+      0,
+      "IMAGE"
+    ],
+    [
+      18,
+      19,
+      0,
+      20,
+      0,
+      "IMAGE"
+    ],
+    [
+      19,
+      20,
+      0,
+      21,
+      0,
+      "IMAGE"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {},
+  "version": 0.4
+}
