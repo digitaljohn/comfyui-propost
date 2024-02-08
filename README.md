@@ -7,7 +7,7 @@ A set of custom ComfyUI nodes for performing basic post-processing effects. Thes
 ## Installation
 
 - Navigate to the `/ComfyUI/custom_nodes/` folder
-- Run `git clone https://github.com/digitaljohn/ComfyUI-Manager.git`
+- Run `git clone https://github.com/digitaljohn/comfyui-propost.git`
 - Restart ComfyUI
 
 ## Nodes
