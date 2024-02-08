@@ -4,6 +4,12 @@ A set of custom ComfyUI nodes for performing basic post-processing effects. Thes
 
 ![ComfyUI Screenshot using Pro Post](./examples/propost.jpg)
 
+## Installation
+
+- Navigate to the `/ComfyUI/custom_nodes/` folder
+- Run `git clone https://github.com/digitaljohn/ComfyUI-Manager.git`
+- Restart ComfyUI
+
 ## Nodes
 
 ### Film Grain
