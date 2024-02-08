@@ -1,5 +1,6 @@
 import sys
 import os
+import cv2
 import torch
 import numpy as np
 
@@ -166,17 +167,125 @@ class ProPostFilmGrain:
             grain_power, shadows, highs, grain_type, 
             grain_sat, gray_scale, sharpen, seed)
         return out_image
+
+
+class ProPostRadialBlur:
+    def __init__(self):
+        pass
+    
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "image": ("IMAGE",),
+                "edge_blur_strength": ("FLOAT", {
+                    "default": 64.0,
+                    "min": 0.0,
+                    "max": 200.0,
+                    "step": 0.1
+                }),
+                "center_focus_weight": ("FLOAT", {
+                    "default": 1.0,
+                    "min": 0.0,
+                    "max": 8.0,
+                    "step": 0.1
+                }),
+                "steps": ("INT", {
+                    "default": 5,
+                    "min": 1,
+                    "max": 32,
+                }),
+            },
+        }
+ 
+    RETURN_TYPES = ("IMAGE",)
+    RETURN_NAMES = ()
+ 
+    FUNCTION = "radialblur_image"
+ 
+    #OUTPUT_NODE = False
+ 
+    CATEGORY = "propost/Radial Blur"
+ 
+    def radialblur_image(self, image: torch.Tensor, edge_blur_strength: float, center_focus_weight: float, steps: int):
+        batch_size, height, width, _ = image.shape
+        result = torch.zeros_like(image)
+
+        for b in range(batch_size):
+            tensor_image = image[b].numpy()
+
+            # Apply blur
+            blur_image = self.apply_radialblur(tensor_image, edge_blur_strength, center_focus_weight, steps)
+
+            tensor = torch.from_numpy(blur_image).unsqueeze(0)
+            result[b] = tensor
+
+        return (result,)
+
+    def apply_radialblur(self, image, edge_blur_strength, center_focus_weight, steps):
+        # Determine if the input image needs normalization
+        needs_normalization = image.max() > 1
+        # Normalize image to [0, 1] if it's not already
+        if needs_normalization:
+            image = image.astype(np.float32) / 255
+        
+        height, width = image.shape[:2]
+        center_x, center_y = width // 2, height // 2
+
+        # Create a radial gradient mask
+        X, Y = np.meshgrid(np.arange(width) - center_x, np.arange(height) - center_y)
+        distance = np.sqrt(X**2 + Y**2)
+        max_distance = np.sqrt(center_x**2 + center_y**2)
+        radial_mask = distance / max_distance
+
+        # Adjust the gradient according to the center_focus_weight
+        radial_mask = np.power(radial_mask, center_focus_weight)
+
+        # Prepare the list to hold blurred versions of the image
+        blurred_images = []
+
+        # Generate blurred versions of the image
+        for step in range(1, steps + 1):
+            blur_size = max(1, int(edge_blur_strength * step / steps))
+            blur_size = blur_size if blur_size % 2 == 1 else blur_size + 1  # Ensure blur_size is odd
+            blurred_image = cv2.GaussianBlur(image, (blur_size, blur_size), 0)
+            blurred_images.append(blurred_image)
+
+        # Initialize the final image
+        final_image = np.zeros_like(image)
+
+        # Blend the blurred images based on the radial mask
+        step_size = 1.0 / steps
+        for i, blurred_image in enumerate(blurred_images):
+            # Calculate the mask for the current step
+            current_mask = np.clip((radial_mask - i * step_size) * steps, 0, 1)
+            next_mask = np.clip((radial_mask - (i + 1) * step_size) * steps, 0, 1)
+            blend_mask = current_mask - next_mask
+
+            # Apply the blend mask
+            final_image += blend_mask[:, :, np.newaxis] * blurred_image
+
+        # Ensure no division by zero; add the original image for areas without blurring
+        final_image += (1 - np.clip(radial_mask * steps, 0, 1))[:, :, np.newaxis] * image
+
+        # Convert back to original range if the image was normalized
+        if needs_normalization:
+            final_image = np.clip(final_image * 255, 0, 255).astype(np.uint8)
+
+        return final_image
  
  
 # A dictionary that contains all nodes you want to export with their names
 # NOTE: names should be globally unique
 NODE_CLASS_MAPPINGS = {
     "ProPostVignette": ProPostVignette,
-    "ProPostFilmGrain": ProPostFilmGrain
+    "ProPostFilmGrain": ProPostFilmGrain,
+    "ProPostRadialBlur": ProPostRadialBlur
 }
  
 # A dictionary that contains the friendly/humanly readable titles for the nodes
 NODE_DISPLAY_NAME_MAPPINGS = {
     "ProPostVignette": "ProPost Vignette",
-    "ProPostFilmGrain": "ProPost Film Grain"
+    "ProPostFilmGrain": "ProPost Film Grain",
+    "ProPostRadialBlur": "ProPost Radial Blur"
 }

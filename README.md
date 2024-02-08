@@ -33,6 +33,7 @@ A film grain effect with many parameters to control the look of the grain. It ca
 
 > Note: This code is a direct port/lift of the versatile `Filmgrainer` library available here: https://github.com/larspontoppidan/filmgrainer
 
+
 ### Vignette
 
 A simple vignette effect that darkens the edges of the screen. It supports very subtle vignettes, as well as more pronounced ones.
@@ -41,8 +42,25 @@ A simple vignette effect that darkens the edges of the screen. It supports very 
 
 | Parameter   | Default   | Type    | Description                                                        |
 |-------------|-----------|---------|--------------------------------------------------------------------|
-| intensity   | `1.0`     | Float   | The intensity of the vignette effect, with a range of 0.0 to 10.0. | 
+| intensity   | `1.0`     | Float   | The intensity of the vignette effect, with a range of 0.0 to 10.0. |
 
+
+### Radial Blur
+
+This filter allows you to blur the edges of the image. It has a few different options that allows you to accomplish a variety of effects.
+
+![Pro Post Radial Blur Example](./examples/propost-radialblur.jpg)
+
+
+| Parameter            | Default   | Type    | Description                                                                   |
+|----------------------|-----------|---------|-------------------------------------------------------------------------------|
+| edge_blur_strength   | `64.0`    | Float   | The intensity of the blur at the edges, with a range of 0.0 to 200.0.         |
+| center_focus_weight  | `1.0`     | Float   | How focused the blur is. A smaller value pinches the blur towards the center. |
+| steps                | `5`       | Integer | The number of steps to use when blurring the image. Higher numbers are slower.|
+
+> Note: Using steps set to `1` can create some dreamy effects as seen below with a high edge_blur_strength.
+
+![Pro Post Dreamy Radial Blur Example](./examples/propost-radialblur-dreamy.jpg)
 
 
 ## Putting it all together
