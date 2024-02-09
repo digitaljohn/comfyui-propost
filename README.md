@@ -93,4 +93,4 @@ Obviously due to the nature of ComfyUI you can compose these effects together. B
 
 Check out this workflow below, which uses the `Film Grain`, `Vignette`, `Radial Blur`, and `Apply LUT` nodes to create the image above. Just drag the image into ComfyUI.
 
-![Sample Workflow](./examples/workflow.png). 
+![Sample Workflow](./examples/workflow.png)
