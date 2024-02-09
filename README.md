@@ -64,7 +64,7 @@ This filter allows you to blur the edges of the image. It has a few different op
 
 ### Apply LUT
 
-This filter allows you to apply a 3D LUT to the image. Currently it only supports 3D LUTs in the .cube format. Upon installation, a folder called `luts` will be created inside the `/ComfyUI/models/`. I know its not strictly a 'model' but it was the best place to put it for now. You can place your .cube files in this folder and they will be available to use in the Apply LUT node but seemed the most logical place to put it for now.
+This filter allows you to apply a 3D LUT to the image. Currently it only supports 3D LUTs in the CUBE format. Upon installation, a sub-folder called `luts` will be created inside `/ComfyUI/models/`. I know it's not strictly a 'model', but it was the best place to put it for now. You can place your `.cube` files in this folder and they will be listed in the node's dropdown.
 
 | Parameter  | Default | Type    | Description                                                   |
 |------------|---------|---------|---------------------------------------------------------------|
