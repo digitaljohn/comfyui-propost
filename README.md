@@ -1,6 +1,6 @@
 # ComfyUI Pro Post
 
-A set of custom ComfyUI nodes for performing basic post-processing effects. These effects can help to take the edge off AI imagery and make them feel more natural. We only have four nodes at the moment, but we plan to add more over time.
+A set of custom ComfyUI nodes for performing basic post-processing effects. These effects can help to take the edge off AI imagery and make them feel more natural. We only have five nodes at the moment, but we plan to add more over time.
 
 ![ComfyUI Screenshot using Pro Post](./examples/propost.jpg)
 
@@ -56,7 +56,7 @@ This filter allows you to blur the edges of the image. It has a few different op
 
 | Parameter            | Default   | Type    | Description                                                                   |
 |----------------------|-----------|---------|-------------------------------------------------------------------------------|
-| edge_blur_strength   | `64.0`    | Float   | The intensity of the blur at the edges, with a range of 0.0 to 200.0.         |
+| blur_strength        | `64.0`    | Float   | The intensity of the blur at the edges, with a range of 0.0 to 256.0.         |
 | center_focus_weight  | `1.0`     | Float   | How focused the blur is. A smaller value pinches the blur towards the center. |
 | steps                | `5`       | Integer | The number of steps to use when blurring the image. Higher numbers are slower.|
 
@@ -65,19 +65,36 @@ This filter allows you to blur the edges of the image. It has a few different op
 ![Pro Post Dreamy Radial Blur Example](./examples/propost-radialblur-dreamy.jpg)
 
 
+### Depth Map Blur
+
+This filter allows you to blur the image based on a depth map. You can use this in combination with the existing Depth Map nodes like `Depth Anything` or `MiDaS` etc.
+
+![Pro Post Depth Map Blur Example](./examples/propost-depthmapblur.jpg)
+
+#### Example workflow
+![Pro Post Depth Map Blur Workflow](./examples/propost-depthmapblur-workflow.png)
+
+
+| Parameter            | Default   | Type    | Description                                                                   |
+|----------------------|-----------|---------|-------------------------------------------------------------------------------|
+| depth_map            | n/a       | Image   | The depth map to use for the blur.                                            |
+| blur_strength        | `64.0`    | Float   | The intensity of the blur at the edges, with a range of 0.0 to 256.0.         |
+| steps                | `5`       | Integer | The number of steps to use when blurring the image. Higher numbers are slower.|
+| focal_depth          | `1.0`     | Float   | The focal depth of the blur. `1.0` is the closest, `0.0` is the farthest.     |
+
+
 ### Apply LUT
 
 This filter allows you to apply a 3D LUT to the image. Currently it only supports 3D LUTs in the CUBE format. Upon installation, a sub-folder called `luts` will be created inside `/ComfyUI/models/`. I know it's not strictly a 'model', but it was the best place to put it for now. You can place your `.cube` files in this folder and they will be listed in the node's dropdown.
+
+![Pro Post Apply LUT Example](./examples/propost-lut.jpg)
+Here we apply a lut called `Waves.cube` to the image in LOG color space.
 
 | Parameter  | Default | Type    | Description                                                   |
 |------------|---------|---------|---------------------------------------------------------------|
 | lut_name   | n/a     | LUT     | The `*.cube` from the `luts` folder to apply to the image.    |
 | strength   | `1.0`   | Float   | The strength of the LUT effect, with a range of 0.0 to 1.0.   |
 | log        | `false` | Boolean | If true, the image is processed in LOG color space.           |
-
-
-![Pro Post Apply LUT Example](./examples/propost-lut.jpg)
-Here we apply a lut called `Waves.cube` to the image in LOG color space.
 
 > Note: This code is a heavily inspired from BilboX's work here: https://github.com/syllebra/bilbox-comfyui
 
