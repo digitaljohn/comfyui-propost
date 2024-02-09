@@ -6,12 +6,13 @@ def generate_blurred_images(image, blur_strength, steps):
     for step in range(1, steps + 1):
         blur_size = max(1, int(blur_strength * step / steps))
         blur_size = blur_size if blur_size % 2 == 1 else blur_size + 1  # Ensure blur_size is odd
-        lendblurred_image = lens_blur(image, blades_shape = 5, blades_radius = blur_size, blades_rotation = 0, method = "bilateral")
-        blurred_image = cv2.GaussianBlur(lendblurred_image, (blur_size, blur_size), 0)
-        blurred_images.append(blurred_image)
+        
+        blurred_image = cv2.GaussianBlur(image, (blur_size, blur_size), 0)
+        lendblurred_image = lens_blur(blurred_image, blades_shape = 5, blades_radius = int(blur_size * 0.5), blades_rotation = 0, method = "dilate")
+        blurred_images.append(lendblurred_image)
     return blurred_images
 
-def lens_blur(image, blades_shape = 5, blades_radius = 10, blades_rotation = 0, method = "bilateral"):
+def lens_blur(image, blades_shape = 5, blades_radius = 10, blades_rotation = 0, method = "dilate"):
     angles = np.linspace(0, 2 * np.pi, blades_shape + 1)[:-1] + blades_rotation * np.pi / 180
     x = blades_radius * np.cos(angles) + blades_radius
     y = blades_radius * np.sin(angles) + blades_radius
