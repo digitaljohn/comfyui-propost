@@ -3,15 +3,19 @@ import os
 import cv2
 import torch
 import numpy as np
+import folder_paths
 from colour.io.luts.iridas_cube import read_LUT_IridasCube, LUT3D, LUT3x1D
 
-# Get the directory of the current file
+# Get the directory of the current file and add it to the system path
 current_file_directory = os.path.dirname(os.path.abspath(__file__))
-
-# Append this directory to sys.path
 sys.path.append(current_file_directory)
 
 import filmgrainer.filmgrainer as filmgrainer
+
+# Create the directory for the LUTs
+dir_luts = os.path.join(folder_paths.models_dir, "luts")
+os.makedirs(dir_luts, exist_ok=True)
+folder_paths.folder_names_and_paths["luts"] = ([dir_luts], set(['.cube']))
 
 class ProPostVignette:
     def __init__(self):
@@ -38,7 +42,7 @@ class ProPostVignette:
  
     #OUTPUT_NODE = False
  
-    CATEGORY = "propost/Effects"
+    CATEGORY = "Pro Post"
  
     def vignette_image(self, image: torch.Tensor, intensity: float):
         batch_size, height, width, _ = image.shape
@@ -142,7 +146,7 @@ class ProPostFilmGrain:
  
     #OUTPUT_NODE = False
  
-    CATEGORY = "propost/Effects"
+    CATEGORY = "Pro Post"
  
     def filmgrain_image(self, image: torch.Tensor, gray_scale: bool, grain_type: str, grain_sat: float, grain_power: float, shadows: float, highs: float, scale: float, sharpen: int, src_gamma: float, seed: int):
         batch_size, height, width, _ = image.shape
@@ -206,7 +210,7 @@ class ProPostRadialBlur:
  
     #OUTPUT_NODE = False
  
-    CATEGORY = "propost/Effects"
+    CATEGORY = "Pro Post"
  
     def radialblur_image(self, image: torch.Tensor, edge_blur_strength: float, center_focus_weight: float, steps: int):
         batch_size, height, width, _ = image.shape
@@ -285,11 +289,14 @@ class ProPostApplyLUT:
         return {
             "required": {
                 "image": ("IMAGE",),
+                "lut_name": (folder_paths.get_filename_list("luts"), ),
                 "strength": ("FLOAT", {
                     "default": 1.0,
                     "min": 0.0,
                     "max": 1.0,
+                    "step": 0.01
                 }),
+                "log": (["No", "Yes"], {"default":"No"}),
             },
         }
  
@@ -300,9 +307,9 @@ class ProPostApplyLUT:
  
     #OUTPUT_NODE = False
  
-    CATEGORY = "propost/Color"
+    CATEGORY = "Pro Post"
  
-    def lut_image(self, image: torch.Tensor, strength: float):
+    def lut_image(self, image: torch.Tensor, lut_name, strength: float, log):
         batch_size, height, width, _ = image.shape
         result = torch.zeros_like(image)
 
@@ -310,39 +317,48 @@ class ProPostApplyLUT:
             tensor_image = image[b].numpy()
 
             # Apply LUT
-            lut_image = self.apply_lut(tensor_image, strength)
+            lut_image = self.apply_lut(tensor_image, lut_name, strength, log)
 
             tensor = torch.from_numpy(lut_image).unsqueeze(0)
             result[b] = tensor
 
         return (result,)
 
-    def apply_lut(self, image, strength):
+    def apply_lut(self, image, lut_name, strength, log):
         if strength == 0:
             return image
 
         # Read the LUT
-        lut_path = os.path.join(current_file_directory, "luts", "sample.cube")
+        lut_path = os.path.join(dir_luts, lut_name)
         lut = self.read_lut(lut_path, clip=True)
 
         # Apply the LUT
         is_non_default_domain = not np.array_equal(lut.domain, np.array([[0., 0., 0.], [1., 1., 1.]]))
         dom_scale = None
 
+        log = (log == "Yes")
+
+        im_array = image.copy()
+
         if is_non_default_domain:
             dom_scale = lut.domain[1] - lut.domain[0]
             im_array = im_array * dom_scale + lut.domain[0]
         if log:
             im_array = im_array ** (1/2.2)
+
         im_array = lut.apply(im_array)
+
         if log:
             im_array = im_array ** (2.2)
         if is_non_default_domain:
             im_array = (im_array - lut.domain[0]) / dom_scale
 
-        return im_array
+        # Blend the original image and the LUT-applied image based on the strength
+        blended_image = (1 - strength) * image + strength * im_array
 
-    def read_lut(lut_path, clip=False):
+        return blended_image
+
+    def read_lut(self, lut_path, clip=False):
         """
         Reads a LUT from the specified path, returning instance of LUT3D or LUT3x1D
 
