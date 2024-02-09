@@ -296,7 +296,9 @@ class ProPostApplyLUT:
                     "max": 1.0,
                     "step": 0.01
                 }),
-                "log": (["No", "Yes"], {"default":"No"}),
+                "log": ("BOOLEAN", {
+                    "default": False
+                }),
             },
         }
  
@@ -309,7 +311,7 @@ class ProPostApplyLUT:
  
     CATEGORY = "Pro Post"
  
-    def lut_image(self, image: torch.Tensor, lut_name, strength: float, log):
+    def lut_image(self, image: torch.Tensor, lut_name, strength: float, log: bool):
         batch_size, height, width, _ = image.shape
         result = torch.zeros_like(image)
 
@@ -335,8 +337,6 @@ class ProPostApplyLUT:
         # Apply the LUT
         is_non_default_domain = not np.array_equal(lut.domain, np.array([[0., 0., 0.], [1., 1., 1.]]))
         dom_scale = None
-
-        log = (log == "Yes")
 
         im_array = image.copy()
 
