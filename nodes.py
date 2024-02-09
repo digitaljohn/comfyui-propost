@@ -3,14 +3,19 @@ import os
 import cv2
 import torch
 import numpy as np
+import folder_paths
+from colour.io.luts.iridas_cube import read_LUT_IridasCube, LUT3D, LUT3x1D
 
-# Get the directory of the current file
+# Get the directory of the current file and add it to the system path
 current_file_directory = os.path.dirname(os.path.abspath(__file__))
-
-# Append this directory to sys.path
 sys.path.append(current_file_directory)
 
 import filmgrainer.filmgrainer as filmgrainer
+
+# Create the directory for the LUTs
+dir_luts = os.path.join(folder_paths.models_dir, "luts")
+os.makedirs(dir_luts, exist_ok=True)
+folder_paths.folder_names_and_paths["luts"] = ([dir_luts], set(['.cube']))
 
 class ProPostVignette:
     def __init__(self):
@@ -37,7 +42,7 @@ class ProPostVignette:
  
     #OUTPUT_NODE = False
  
-    CATEGORY = "propost/Effects"
+    CATEGORY = "Pro Post"
  
     def vignette_image(self, image: torch.Tensor, intensity: float):
         batch_size, height, width, _ = image.shape
@@ -141,7 +146,7 @@ class ProPostFilmGrain:
  
     #OUTPUT_NODE = False
  
-    CATEGORY = "propost/Film Grain"
+    CATEGORY = "Pro Post"
  
     def filmgrain_image(self, image: torch.Tensor, gray_scale: bool, grain_type: str, grain_sat: float, grain_power: float, shadows: float, highs: float, scale: float, sharpen: int, src_gamma: float, seed: int):
         batch_size, height, width, _ = image.shape
@@ -205,7 +210,7 @@ class ProPostRadialBlur:
  
     #OUTPUT_NODE = False
  
-    CATEGORY = "propost/Radial Blur"
+    CATEGORY = "Pro Post"
  
     def radialblur_image(self, image: torch.Tensor, edge_blur_strength: float, center_focus_weight: float, steps: int):
         batch_size, height, width, _ = image.shape
@@ -273,6 +278,109 @@ class ProPostRadialBlur:
             final_image = np.clip(final_image * 255, 0, 255).astype(np.uint8)
 
         return final_image
+
+
+class ProPostApplyLUT:
+    def __init__(self):
+        pass
+    
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "image": ("IMAGE",),
+                "lut_name": (folder_paths.get_filename_list("luts"), ),
+                "strength": ("FLOAT", {
+                    "default": 1.0,
+                    "min": 0.0,
+                    "max": 1.0,
+                    "step": 0.01
+                }),
+                "log": (["No", "Yes"], {"default":"No"}),
+            },
+        }
+ 
+    RETURN_TYPES = ("IMAGE",)
+    RETURN_NAMES = ()
+ 
+    FUNCTION = "lut_image"
+ 
+    #OUTPUT_NODE = False
+ 
+    CATEGORY = "Pro Post"
+ 
+    def lut_image(self, image: torch.Tensor, lut_name, strength: float, log):
+        batch_size, height, width, _ = image.shape
+        result = torch.zeros_like(image)
+
+        for b in range(batch_size):
+            tensor_image = image[b].numpy()
+
+            # Apply LUT
+            lut_image = self.apply_lut(tensor_image, lut_name, strength, log)
+
+            tensor = torch.from_numpy(lut_image).unsqueeze(0)
+            result[b] = tensor
+
+        return (result,)
+
+    def apply_lut(self, image, lut_name, strength, log):
+        if strength == 0:
+            return image
+
+        # Read the LUT
+        lut_path = os.path.join(dir_luts, lut_name)
+        lut = self.read_lut(lut_path, clip=True)
+
+        # Apply the LUT
+        is_non_default_domain = not np.array_equal(lut.domain, np.array([[0., 0., 0.], [1., 1., 1.]]))
+        dom_scale = None
+
+        log = (log == "Yes")
+
+        im_array = image.copy()
+
+        if is_non_default_domain:
+            dom_scale = lut.domain[1] - lut.domain[0]
+            im_array = im_array * dom_scale + lut.domain[0]
+        if log:
+            im_array = im_array ** (1/2.2)
+
+        im_array = lut.apply(im_array)
+
+        if log:
+            im_array = im_array ** (2.2)
+        if is_non_default_domain:
+            im_array = (im_array - lut.domain[0]) / dom_scale
+
+        # Blend the original image and the LUT-applied image based on the strength
+        blended_image = (1 - strength) * image + strength * im_array
+
+        return blended_image
+
+    def read_lut(self, lut_path, clip=False):
+        """
+        Reads a LUT from the specified path, returning instance of LUT3D or LUT3x1D
+
+        <lut_path>: the path to the file from which to read the LUT (
+        <clip>: flag indicating whether to apply clipping of LUT values, limiting all values to the domain's lower and
+            upper bounds
+        """
+        lut: Union[LUT3x1D, LUT3D] = read_LUT_IridasCube(lut_path)
+        lut.name = os.path.splitext(os.path.basename(lut_path))[0]  # use base filename instead of internal LUT name
+
+        if clip:
+            if lut.domain[0].max() == lut.domain[0].min() and lut.domain[1].max() == lut.domain[1].min():
+                lut.table = np.clip(lut.table, lut.domain[0, 0], lut.domain[1, 0])
+            else:
+                if len(lut.table.shape) == 2:  # 3x1D
+                    for dim in range(3):
+                        lut.table[:, dim] = np.clip(lut.table[:, dim], lut.domain[0, dim], lut.domain[1, dim])
+                else:  # 3D
+                    for dim in range(3):
+                        lut.table[:, :, :, dim] = np.clip(lut.table[:, :, :, dim], lut.domain[0, dim], lut.domain[1, dim])
+
+        return lut
  
  
 # A dictionary that contains all nodes you want to export with their names
@@ -280,12 +388,14 @@ class ProPostRadialBlur:
 NODE_CLASS_MAPPINGS = {
     "ProPostVignette": ProPostVignette,
     "ProPostFilmGrain": ProPostFilmGrain,
-    "ProPostRadialBlur": ProPostRadialBlur
+    "ProPostRadialBlur": ProPostRadialBlur,
+    "ProPostApplyLUT": ProPostApplyLUT
 }
  
 # A dictionary that contains the friendly/humanly readable titles for the nodes
 NODE_DISPLAY_NAME_MAPPINGS = {
     "ProPostVignette": "ProPost Vignette",
     "ProPostFilmGrain": "ProPost Film Grain",
-    "ProPostRadialBlur": "ProPost Radial Blur"
+    "ProPostRadialBlur": "ProPost Radial Blur",
+    "ProPostApplyLUT": "ProPost Apply LUT"
 }
