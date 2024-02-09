@@ -34,6 +34,18 @@ class ProPostVignette:
                     "max": 10.0,
                     "step": 0.01
                 }),
+                "center_x": ("FLOAT", {
+                    "default": 0.5,
+                    "min": 0.0,
+                    "max": 1.0,
+                    "step": 0.01
+                }),
+                "center_y": ("FLOAT", {
+                    "default": 0.5,
+                    "min": 0.0,
+                    "max": 1.0,
+                    "step": 0.01
+                }),
             },
         }
  
@@ -46,7 +58,7 @@ class ProPostVignette:
  
     CATEGORY = "Pro Post/Camera Effects"
  
-    def vignette_image(self, image: torch.Tensor, intensity: float):
+    def vignette_image(self, image: torch.Tensor, intensity: float, center_x: float, center_y: float):
         batch_size, height, width, _ = image.shape
         result = torch.zeros_like(image)
 
@@ -54,28 +66,49 @@ class ProPostVignette:
             tensor_image = image[b].numpy()
 
             # Apply vignette
-            vignette_image = self.apply_vignette(tensor_image, intensity)
+            vignette_image = self.apply_vignette(tensor_image, intensity, center_x, center_y)
 
             tensor = torch.from_numpy(vignette_image).unsqueeze(0)
             result[b] = tensor
 
         return (result,)
 
-    def apply_vignette(self, image, vignette_strength):
+    def apply_vignette(self, image, vignette_strength, center_x_ratio, center_y_ratio):
         if vignette_strength == 0:
             return image
 
         height, width, _ = image.shape
+
+        # Create linear space but centered around the provided center point ratios
         x = np.linspace(-1, 1, width)
         y = np.linspace(-1, 1, height)
-        X, Y = np.meshgrid(x, y)
-        radius = np.sqrt(X ** 2 + Y ** 2)
+        X, Y = np.meshgrid(x - (2 * center_x_ratio - 1), y - (2 * center_y_ratio - 1))
+        
+        # Calculate distances to the furthest corner
+        distances_to_corners = [
+            np.sqrt((0 - center_x_ratio) ** 2 + (0 - center_y_ratio) ** 2),
+            np.sqrt((1 - center_x_ratio) ** 2 + (0 - center_y_ratio) ** 2),
+            np.sqrt((0 - center_x_ratio) ** 2 + (1 - center_y_ratio) ** 2),
+            np.sqrt((1 - center_x_ratio) ** 2 + (1 - center_y_ratio) ** 2)
+        ]
+        max_distance_to_corner = np.max(distances_to_corners)
 
-        radius = radius / np.max(radius)
+        radius = np.sqrt(X ** 2 + Y ** 2)
+        radius = radius / (max_distance_to_corner * np.sqrt(2))  # Normalize radius
         opacity = np.clip(vignette_strength, 0, 1)
         vignette = 1 - radius * opacity
 
-        return np.clip(image * vignette[..., np.newaxis], 0, 1)
+        # If image needs to be normalized (0-1 range)
+        needs_normalization = image.max() > 1
+        if needs_normalization:
+            image = image.astype(np.float32) / 255
+        
+        final_image = np.clip(image * vignette[..., np.newaxis], 0, 1)
+        
+        if needs_normalization:
+            final_image = (final_image * 255).astype(np.uint8)
+
+        return final_image
 
 class ProPostFilmGrain:
     grain_types = ["Fine", "Fine Simple", "Coarse", "Coarser"]
@@ -249,9 +282,18 @@ class ProPostRadialBlur:
         height, width = image.shape[:2]
         center_x, center_y = int(width * center_x_ratio), int(height * center_y_ratio)
 
+        # Calculate distances to all corners from the center
+        distances_to_corners = [
+            np.sqrt((center_x - 0)**2 + (center_y - 0)**2),
+            np.sqrt((center_x - width)**2 + (center_y - 0)**2),
+            np.sqrt((center_x - 0)**2 + (center_y - height)**2),
+            np.sqrt((center_x - width)**2 + (center_y - height)**2)
+        ]
+        max_distance_to_corner = max(distances_to_corners)
+
         # Create and adjust radial mask
         X, Y = np.meshgrid(np.arange(width) - center_x, np.arange(height) - center_y)
-        radial_mask = np.sqrt(X**2 + Y**2) / np.sqrt(center_x**2 + center_y**2)
+        radial_mask = np.sqrt(X**2 + Y**2) / max_distance_to_corner
         radial_mask = np.power(radial_mask, center_focus_weight)
 
         blurred_images = processing_utils.generate_blurred_images(image, blur_strength, steps)
