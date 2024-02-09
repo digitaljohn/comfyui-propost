@@ -113,7 +113,7 @@ Here we apply a lut called `Waves.cube` to the image in LOG color space.
 
 Obviously due to the nature of ComfyUI you can compose these effects together. Below is an example of a all the effects combined to create a more controlled and striking image.
 
-![Pro Post Film Grain Example](./examples/propost-compound.png)
+![Pro Post Film Grain Example](./examples/propost-compound.jpg)
 
 
 ## Example
