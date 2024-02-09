@@ -197,6 +197,18 @@ class ProPostRadialBlur:
                     "max": 8.0,
                     "step": 0.1
                 }),
+                "center_x": ("FLOAT", {
+                    "default": 0.5,
+                    "min": 0.0,
+                    "max": 1.0,
+                    "step": 0.01
+                }),
+                "center_y": ("FLOAT", {
+                    "default": 0.5,
+                    "min": 0.0,
+                    "max": 1.0,
+                    "step": 0.01
+                }),
                 "steps": ("INT", {
                     "default": 5,
                     "min": 1,
@@ -214,7 +226,7 @@ class ProPostRadialBlur:
  
     CATEGORY = "Pro Post/Blur Effects"
  
-    def radialblur_image(self, image: torch.Tensor, blur_strength: float, center_focus_weight: float, steps: int):
+    def radialblur_image(self, image: torch.Tensor, blur_strength: float, center_focus_weight: float, center_x: float, center_y:float, steps: int):
         batch_size, height, width, _ = image.shape
         result = torch.zeros_like(image)
 
@@ -222,20 +234,20 @@ class ProPostRadialBlur:
             tensor_image = image[b].numpy()
 
             # Apply blur
-            blur_image = self.apply_radialblur(tensor_image, blur_strength, center_focus_weight, steps)
+            blur_image = self.apply_radialblur(tensor_image, blur_strength, center_focus_weight, center_x, center_y, steps)
 
             tensor = torch.from_numpy(blur_image).unsqueeze(0)
             result[b] = tensor
 
         return (result,)
 
-    def apply_radialblur(self, image, blur_strength, center_focus_weight, steps):
+    def apply_radialblur(self, image, blur_strength, center_focus_weight, center_x_ratio, center_y_ratio, steps):
         needs_normalization = image.max() > 1
         if needs_normalization:
             image = image.astype(np.float32) / 255
         
         height, width = image.shape[:2]
-        center_x, center_y = width // 2, height // 2
+        center_x, center_y = int(width * center_x_ratio), int(height * center_y_ratio)
 
         # Create and adjust radial mask
         X, Y = np.meshgrid(np.arange(width) - center_x, np.arange(height) - center_y)
