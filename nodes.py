@@ -5,6 +5,7 @@ import torch
 import numpy as np
 import folder_paths
 from colour.io.luts.iridas_cube import read_LUT_IridasCube, LUT3D, LUT3x1D
+from .utils import processing as processing_utils
 
 # Get the directory of the current file and add it to the system path
 current_file_directory = os.path.dirname(os.path.abspath(__file__))
@@ -16,6 +17,7 @@ import filmgrainer.filmgrainer as filmgrainer
 dir_luts = os.path.join(folder_paths.models_dir, "luts")
 os.makedirs(dir_luts, exist_ok=True)
 folder_paths.folder_names_and_paths["luts"] = ([dir_luts], set(['.cube']))
+
 
 class ProPostVignette:
     def __init__(self):
@@ -42,7 +44,7 @@ class ProPostVignette:
  
     #OUTPUT_NODE = False
  
-    CATEGORY = "Pro Post"
+    CATEGORY = "Pro Post/Camera Effects"
  
     def vignette_image(self, image: torch.Tensor, intensity: float):
         batch_size, height, width, _ = image.shape
@@ -146,7 +148,7 @@ class ProPostFilmGrain:
  
     #OUTPUT_NODE = False
  
-    CATEGORY = "Pro Post"
+    CATEGORY = "Pro Post/Camera Effects"
  
     def filmgrain_image(self, image: torch.Tensor, gray_scale: bool, grain_type: str, grain_sat: float, grain_power: float, shadows: float, highs: float, scale: float, sharpen: int, src_gamma: float, seed: int):
         batch_size, height, width, _ = image.shape
@@ -183,11 +185,11 @@ class ProPostRadialBlur:
         return {
             "required": {
                 "image": ("IMAGE",),
-                "edge_blur_strength": ("FLOAT", {
+                "blur_strength": ("FLOAT", {
                     "default": 64.0,
                     "min": 0.0,
-                    "max": 200.0,
-                    "step": 0.1
+                    "max": 256.0,
+                    "step": 1.0
                 }),
                 "center_focus_weight": ("FLOAT", {
                     "default": 1.0,
@@ -210,9 +212,9 @@ class ProPostRadialBlur:
  
     #OUTPUT_NODE = False
  
-    CATEGORY = "Pro Post"
+    CATEGORY = "Pro Post/Blur Effects"
  
-    def radialblur_image(self, image: torch.Tensor, edge_blur_strength: float, center_focus_weight: float, steps: int):
+    def radialblur_image(self, image: torch.Tensor, blur_strength: float, center_focus_weight: float, steps: int):
         batch_size, height, width, _ = image.shape
         result = torch.zeros_like(image)
 
@@ -220,60 +222,29 @@ class ProPostRadialBlur:
             tensor_image = image[b].numpy()
 
             # Apply blur
-            blur_image = self.apply_radialblur(tensor_image, edge_blur_strength, center_focus_weight, steps)
+            blur_image = self.apply_radialblur(tensor_image, blur_strength, center_focus_weight, steps)
 
             tensor = torch.from_numpy(blur_image).unsqueeze(0)
             result[b] = tensor
 
         return (result,)
 
-    def apply_radialblur(self, image, edge_blur_strength, center_focus_weight, steps):
-        # Determine if the input image needs normalization
+    def apply_radialblur(self, image, blur_strength, center_focus_weight, steps):
         needs_normalization = image.max() > 1
-        # Normalize image to [0, 1] if it's not already
         if needs_normalization:
             image = image.astype(np.float32) / 255
         
         height, width = image.shape[:2]
         center_x, center_y = width // 2, height // 2
 
-        # Create a radial gradient mask
+        # Create and adjust radial mask
         X, Y = np.meshgrid(np.arange(width) - center_x, np.arange(height) - center_y)
-        distance = np.sqrt(X**2 + Y**2)
-        max_distance = np.sqrt(center_x**2 + center_y**2)
-        radial_mask = distance / max_distance
-
-        # Adjust the gradient according to the center_focus_weight
+        radial_mask = np.sqrt(X**2 + Y**2) / np.sqrt(center_x**2 + center_y**2)
         radial_mask = np.power(radial_mask, center_focus_weight)
 
-        # Prepare the list to hold blurred versions of the image
-        blurred_images = []
+        blurred_images = processing_utils.generate_blurred_images(image, blur_strength, steps)
+        final_image = processing_utils.apply_blurred_images(image, blurred_images, radial_mask)
 
-        # Generate blurred versions of the image
-        for step in range(1, steps + 1):
-            blur_size = max(1, int(edge_blur_strength * step / steps))
-            blur_size = blur_size if blur_size % 2 == 1 else blur_size + 1  # Ensure blur_size is odd
-            blurred_image = cv2.GaussianBlur(image, (blur_size, blur_size), 0)
-            blurred_images.append(blurred_image)
-
-        # Initialize the final image
-        final_image = np.zeros_like(image)
-
-        # Blend the blurred images based on the radial mask
-        step_size = 1.0 / steps
-        for i, blurred_image in enumerate(blurred_images):
-            # Calculate the mask for the current step
-            current_mask = np.clip((radial_mask - i * step_size) * steps, 0, 1)
-            next_mask = np.clip((radial_mask - (i + 1) * step_size) * steps, 0, 1)
-            blend_mask = current_mask - next_mask
-
-            # Apply the blend mask
-            final_image += blend_mask[:, :, np.newaxis] * blurred_image
-
-        # Ensure no division by zero; add the original image for areas without blurring
-        final_image += (1 - np.clip(radial_mask * steps, 0, 1))[:, :, np.newaxis] * image
-
-        # Convert back to original range if the image was normalized
         if needs_normalization:
             final_image = np.clip(final_image * 255, 0, 255).astype(np.uint8)
 
@@ -293,8 +264,8 @@ class ProPostDepthMapBlur:
                 "blur_strength": ("FLOAT", {
                     "default": 64.0,
                     "min": 0.0,
-                    "max": 200.0,
-                    "step": 0.1
+                    "max": 256.0,
+                    "step": 1.0
                 }),
                 "steps": ("INT", {
                     "default": 5,
@@ -302,7 +273,7 @@ class ProPostDepthMapBlur:
                     "max": 32,
                 }),
                 "focal_depth": ("FLOAT", {
-                    "default": 0.5,
+                    "default": 1.0,
                     "min": 0.0,
                     "max": 1.0,
                     "step": 0.01
@@ -317,7 +288,7 @@ class ProPostDepthMapBlur:
  
     #OUTPUT_NODE = False
  
-    CATEGORY = "Pro Post"
+    CATEGORY = "Pro Post/Blur Effects"
  
     def depthblur_image(self, image: torch.Tensor, depth_map: torch.Tensor, blur_strength: float, steps: int, focal_depth: float):
         batch_size, height, width, _ = image.shape
@@ -342,39 +313,26 @@ class ProPostDepthMapBlur:
             image = image.astype(np.float32) / 255
 
         # Normalize the depth map if needed
-        if depth_map.max() > 1:
-            depth_map = depth_map.astype(np.float32) / 255
+        depth_map = depth_map.astype(np.float32) / 255 if depth_map.max() > 1 else depth_map
 
-        # Resize depth map to match the image dimensions and adjust based on the focal plane
+        # Resize depth map to match the image dimensions
         depth_map_resized = cv2.resize(depth_map, (image.shape[1], image.shape[0]), interpolation=cv2.INTER_LINEAR)
         if len(depth_map_resized.shape) > 2:
             depth_map_resized = cv2.cvtColor(depth_map_resized, cv2.COLOR_BGR2GRAY)
-        depth_map_resized = np.abs(depth_map_resized - focal_depth)
-        depth_map_resized = np.clip(depth_map_resized / np.max(depth_map_resized), 0, 1)
 
-        # Prepare the list to hold blurred versions of the image
-        blurred_images = [cv2.GaussianBlur(image, (max(1, int(blur_strength * step / steps) // 2 * 2 + 1), max(1, int(blur_strength * step / steps) // 2 * 2 + 1)), 0) for step in range(1, steps + 1)]
+        # Adjust the depth map based on the focal plane
+        depth_mask = np.abs(depth_map_resized - focal_depth)
+        depth_mask = np.clip(depth_mask / np.max(depth_mask), 0, 1)
 
-        # Initialize the final image as a float to prevent overflow during accumulation
-        final_image = np.zeros_like(image, dtype=np.float32)
+        # Generate blurred versions of the image
+        blurred_images = processing_utils.generate_blurred_images(image, blur_strength, steps)
 
-        # Calculate weight for each blurred image based on depth map and accumulate the blended images
-        weights_sum = np.zeros_like(image[:, :, 0], dtype=np.float32)
-        for blurred_image in blurred_images:
-            weight = np.exp(-depth_map_resized * steps)  # Calculate blending weight
-            final_image += blurred_image * weight[:, :, None]
-            weights_sum += weight
+        # Use the adjusted depth map as a mask for applying blurred images
+        final_image = processing_utils.apply_blurred_images(image, blurred_images, depth_mask)
 
-        # Normalize the final image by the sum of weights to prevent darkening
-        final_image /= weights_sum[:, :, None] + 1e-6  # Add a small value to prevent division by zero
-
-        # Blend with the original image to ensure sharp areas are preserved
-        final_image = final_image * depth_map_resized[:, :, None] + image * (1 - depth_map_resized)[:, :, None]
-
-        # Clip values to maintain proper intensity range and convert back if normalization was done
-        final_image = np.clip(final_image, 0, 1)
+        # Convert back to original range if the image was normalized
         if needs_normalization:
-            final_image = (final_image * 255).astype(np.uint8)
+            final_image = np.clip(final_image * 255, 0, 255).astype(np.uint8)
 
         return final_image
 
@@ -408,7 +366,7 @@ class ProPostApplyLUT:
  
     #OUTPUT_NODE = False
  
-    CATEGORY = "Pro Post"
+    CATEGORY = "Pro Post/Color Grading"
  
     def lut_image(self, image: torch.Tensor, lut_name, strength: float, log: bool):
         batch_size, height, width, _ = image.shape
