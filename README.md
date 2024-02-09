@@ -62,6 +62,22 @@ This filter allows you to blur the edges of the image. It has a few different op
 
 ![Pro Post Dreamy Radial Blur Example](./examples/propost-radialblur-dreamy.jpg)
 
+### Apply LUT
+
+This filter allows you to apply a 3D LUT to the image. It has a few different options that allows you to accomplish a variety of effects. Currently it only supports 3D LUTs in the .cube format. Upon installation, a folder called `luts` will be created inside the `/ComfyUI/models/`. I know its not strictly a 'model' but it was the best place to put it for now. You can place your .cube files in this folder and they will be available to use in the Apply LUT node but seemed the most logical place to put it for now.
+
+| Parameter  | Default | Type    | Description                                                   |
+|------------|---------|---------|---------------------------------------------------------------|
+| lut_name   | n/a     | LUT     | The `*.cube` from the `luts` folder to apply to the image.    |
+| strength   | `1.0`   | Float   | The strength of the LUT effect, with a range of 0.0 to 1.0.   |
+| log        | `false` | Boolean | If true, the image is processed in LOG color space.           |
+
+
+![Pro Post Apply LUT Example](./examples/propost-lut.jpg)
+Here we apply a lut called `Waves.cube` to the image in LOG color space.
+
+> Note: This code is a heavily inspired from BilboX's work here: https://github.com/syllebra/bilbox-comfyui
+
 
 ## Putting it all together
 
