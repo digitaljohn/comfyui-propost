@@ -301,6 +301,12 @@ class ProPostDepthMapBlur:
                     "min": 1,
                     "max": 32,
                 }),
+                "focal_depth": ("FLOAT", {
+                    "default": 0.5,
+                    "min": 0.0,
+                    "max": 1.0,
+                    "step": 0.01
+                }),
             },
         }
  
@@ -313,60 +319,62 @@ class ProPostDepthMapBlur:
  
     CATEGORY = "Pro Post"
  
-    def depthblur_image(self, image: torch.Tensor, depth_map: torch.Tensor, blur_strength: float, steps: int):
+    def depthblur_image(self, image: torch.Tensor, depth_map: torch.Tensor, blur_strength: float, steps: int, focal_depth: float):
         batch_size, height, width, _ = image.shape
         result = torch.zeros_like(image)
 
         for b in range(batch_size):
             tensor_image = image[b].numpy()
+            tensor_image_depth = depth_map[b].numpy()
 
             # Apply blur
-            blur_image = self.apply_radialblur(tensor_image, depth_map, blur_strength, steps)
+            blur_image = self.apply_depthblur(tensor_image, tensor_image_depth, blur_strength, steps, focal_depth)
 
             tensor = torch.from_numpy(blur_image).unsqueeze(0)
             result[b] = tensor
 
         return (result,)
 
-    def apply_depthblur(self, image, blur_strength, center_focus_weight, steps):
-        # Determine if the input image needs normalization
+    def apply_depthblur(self, image, depth_map, blur_strength, steps, focal_depth):
+        # Normalize the input image if needed
         needs_normalization = image.max() > 1
-        # Normalize image to [0, 1] if it's not already
         if needs_normalization:
             image = image.astype(np.float32) / 255
-        
-        assert image.shape[:2] == depth_map.shape[:2], "Image and depth map must have the same dimensions"
-        
+
+        # Normalize the depth map if needed
+        if depth_map.max() > 1:
+            depth_map = depth_map.astype(np.float32) / 255
+
+        # Resize depth map to match the image dimensions and adjust based on the focal plane
+        depth_map_resized = cv2.resize(depth_map, (image.shape[1], image.shape[0]), interpolation=cv2.INTER_LINEAR)
+        if len(depth_map_resized.shape) > 2:
+            depth_map_resized = cv2.cvtColor(depth_map_resized, cv2.COLOR_BGR2GRAY)
+        depth_map_resized = np.abs(depth_map_resized - focal_depth)
+        depth_map_resized = np.clip(depth_map_resized / np.max(depth_map_resized), 0, 1)
+
         # Prepare the list to hold blurred versions of the image
-        blurred_images = []
+        blurred_images = [cv2.GaussianBlur(image, (max(1, int(blur_strength * step / steps) // 2 * 2 + 1), max(1, int(blur_strength * step / steps) // 2 * 2 + 1)), 0) for step in range(1, steps + 1)]
 
-        # Generate blurred versions of the image
-        for step in range(1, steps + 1):
-            blur_size = max(1, int(blur_strength * step / steps))
-            blur_size = blur_size if blur_size % 2 == 1 else blur_size + 1  # Ensure blur_size is odd
-            blurred_image = cv2.GaussianBlur(image, (blur_size, blur_size), 0)
-            blurred_images.append(blurred_image)
+        # Initialize the final image as a float to prevent overflow during accumulation
+        final_image = np.zeros_like(image, dtype=np.float32)
 
-        # Initialize the final image
-        final_image = np.zeros_like(image)
+        # Calculate weight for each blurred image based on depth map and accumulate the blended images
+        weights_sum = np.zeros_like(image[:, :, 0], dtype=np.float32)
+        for blurred_image in blurred_images:
+            weight = np.exp(-depth_map_resized * steps)  # Calculate blending weight
+            final_image += blurred_image * weight[:, :, None]
+            weights_sum += weight
 
-        # Blend the blurred images based on the depth map
-        step_size = 1.0 / steps
-        for i, blurred_image in enumerate(blurred_images):
-            # Calculate the mask for the current step
-            current_mask = np.clip((depth_map - i * step_size) * steps, 0, 1)
-            next_mask = np.clip((depth_map - (i + 1) * step_size) * steps, 0, 1)
-            blend_mask = current_mask - next_mask
+        # Normalize the final image by the sum of weights to prevent darkening
+        final_image /= weights_sum[:, :, None] + 1e-6  # Add a small value to prevent division by zero
 
-            # Apply the blend mask
-            final_image += blend_mask[:, :, np.newaxis] * blurred_image
+        # Blend with the original image to ensure sharp areas are preserved
+        final_image = final_image * depth_map_resized[:, :, None] + image * (1 - depth_map_resized)[:, :, None]
 
-        # Ensure no division by zero; add the original image for areas without blurring
-        final_image += (1 - np.clip(depth_map * steps, 0, 1))[:, :, np.newaxis] * image
-
-        # Convert back to original range if the image was normalized
+        # Clip values to maintain proper intensity range and convert back if normalization was done
+        final_image = np.clip(final_image, 0, 1)
         if needs_normalization:
-            final_image = np.clip(final_image * 255, 0, 255).astype(np.uint8)
+            final_image = (final_image * 255).astype(np.uint8)
 
         return final_image
 
