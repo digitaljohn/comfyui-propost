@@ -4,11 +4,13 @@ A set of custom ComfyUI nodes for performing basic post-processing effects. Thes
 
 ![ComfyUI Screenshot using Pro Post](./examples/propost.jpg)
 
+
 ## Installation
 
 - Navigate to the `/ComfyUI/custom_nodes/` folder
 - Run `git clone https://github.com/digitaljohn/comfyui-propost.git`
 - Restart ComfyUI
+
 
 ## Nodes
 
@@ -62,6 +64,7 @@ This filter allows you to blur the edges of the image. It has a few different op
 
 ![Pro Post Dreamy Radial Blur Example](./examples/propost-radialblur-dreamy.jpg)
 
+
 ### Apply LUT
 
 This filter allows you to apply a 3D LUT to the image. Currently it only supports 3D LUTs in the CUBE format. Upon installation, a sub-folder called `luts` will be created inside `/ComfyUI/models/`. I know it's not strictly a 'model', but it was the best place to put it for now. You can place your `.cube` files in this folder and they will be listed in the node's dropdown.
@@ -81,10 +84,13 @@ Here we apply a lut called `Waves.cube` to the image in LOG color space.
 
 ## Putting it all together
 
-Obviously due to the nature of ComfyUI you can compose these effects together. Below is an example of a strong vignette along with a coarse film grain effect.
+Obviously due to the nature of ComfyUI you can compose these effects together. Below is an example of a all the effects combined to create a more controlled and striking image.
 
-![Pro Post Film Grain Example](./examples/propost-compound.jpg)
+![Pro Post Film Grain Example](./examples/propost-compound.png)
+
 
 ## Example
 
-Check out the sample workflow that was used to generate these sample images here: [Pro Post Example Workflow](./examples/propost.json). Have fun!
+Check out this workflow below, which uses the `Film Grain`, `Vignette`, `Radial Blur`, and `Apply LUT` nodes to create the image above. Just drag the image into ComfyUI.
+
+![Sample Workflow](./examples/workflow.png). 
