@@ -7,8 +7,14 @@ A set of custom ComfyUI nodes for performing basic post-processing effects. Thes
 
 ## Installation
 
+The easiest way is using the [ComfyUI Manager](https://github.com/ltdrdata/ComfyUI-Manager) to install this package. Just search for `propost` and click install.
+
+
+### Manual Installation
+
 - Navigate to the `/ComfyUI/custom_nodes/` folder
 - Run `git clone https://github.com/digitaljohn/comfyui-propost.git`
+- Run `pip install -r requirements.txt`
 - Restart ComfyUI
 
 
