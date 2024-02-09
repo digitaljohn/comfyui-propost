@@ -67,9 +67,9 @@ This filter allows you to blur the edges of the image. It has a few different op
 
 ### Depth Map Blur
 
-This filter allows you to blur the image based on a depth map. You can use this in combination with the existing Depth Map nodes like `Depth Anything` or `MiDas` etc.
+This filter allows you to blur the image based on a depth map. You can use this in combination with the existing Depth Map nodes like `Depth Anything` or `MiDaS` etc.
 
-![Pro Post Depth Map Blur Example](./examples/propost-depthmapblur.png)
+![Pro Post Depth Map Blur Example](./examples/propost-depthmapblur.jpg)
 
 #### Example workflow
 ![Pro Post Depth Map Blur Workflow](./examples/propost-depthmapblur-workflow.png)
