@@ -62,24 +62,27 @@ class ProPostVignette:
         batch_size, height, width, _ = image.shape
         result = torch.zeros_like(image)
 
+        if intensity == 0:
+            return image
+
         # Generate the vignette for each image in the batch
         # Create linear space but centered around the provided center point ratios
         x = np.linspace(-1, 1, width)
         y = np.linspace(-1, 1, height)
-        X, Y = np.meshgrid(x - (2 * center_x_ratio - 1), y - (2 * center_y_ratio - 1))
+        X, Y = np.meshgrid(x - (2 * center_x - 1), y - (2 * center_y - 1))
         
         # Calculate distances to the furthest corner
         distances_to_corners = [
-            np.sqrt((0 - center_x_ratio) ** 2 + (0 - center_y_ratio) ** 2),
-            np.sqrt((1 - center_x_ratio) ** 2 + (0 - center_y_ratio) ** 2),
-            np.sqrt((0 - center_x_ratio) ** 2 + (1 - center_y_ratio) ** 2),
-            np.sqrt((1 - center_x_ratio) ** 2 + (1 - center_y_ratio) ** 2)
+            np.sqrt((0 - center_x) ** 2 + (0 - center_y) ** 2),
+            np.sqrt((1 - center_x) ** 2 + (0 - center_y) ** 2),
+            np.sqrt((0 - center_x) ** 2 + (1 - center_y) ** 2),
+            np.sqrt((1 - center_x) ** 2 + (1 - center_y) ** 2)
         ]
         max_distance_to_corner = np.max(distances_to_corners)
 
         radius = np.sqrt(X ** 2 + Y ** 2)
         radius = radius / (max_distance_to_corner * np.sqrt(2))  # Normalize radius
-        opacity = np.clip(vignette_strength, 0, 1)
+        opacity = np.clip(intensity, 0, 1)
         vignette = 1 - radius * opacity
 
         for b in range(batch_size):
@@ -94,9 +97,6 @@ class ProPostVignette:
         return (result,)
 
     def apply_vignette(self, image, vignette):
-        if vignette_strength == 0:
-            return image
-
         # If image needs to be normalized (0-1 range)
         needs_normalization = image.max() > 1
         if needs_normalization:
@@ -264,19 +264,19 @@ class ProPostRadialBlur:
         result = torch.zeros_like(image)
 
         # Generate the vignette for each image in the batch
-        center_x, center_y = int(width * center_x_ratio), int(height * center_y_ratio)
+        c_x, c_y = int(width * center_x), int(height * center_y)
 
         # Calculate distances to all corners from the center
         distances_to_corners = [
-            np.sqrt((center_x - 0)**2 + (center_y - 0)**2),
-            np.sqrt((center_x - width)**2 + (center_y - 0)**2),
-            np.sqrt((center_x - 0)**2 + (center_y - height)**2),
-            np.sqrt((center_x - width)**2 + (center_y - height)**2)
+            np.sqrt((c_x - 0)**2 + (c_y - 0)**2),
+            np.sqrt((c_x - width)**2 + (c_y - 0)**2),
+            np.sqrt((c_x - 0)**2 + (c_y - height)**2),
+            np.sqrt((c_x - width)**2 + (c_y - height)**2)
         ]
         max_distance_to_corner = max(distances_to_corners)
 
         # Create and adjust radial mask
-        X, Y = np.meshgrid(np.arange(width) - center_x, np.arange(height) - center_y)
+        X, Y = np.meshgrid(np.arange(width) - c_x, np.arange(height) - c_y)
         radial_mask = np.sqrt(X**2 + Y**2) / max_distance_to_corner
 
         for b in range(batch_size):
