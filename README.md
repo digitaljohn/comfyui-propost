@@ -1,4 +1,4 @@
-# ComfyUI Pro Post
+# ComfyUI ProPost
 
 A set of custom ComfyUI nodes for performing basic post-processing effects. These effects can help to take the edge off AI imagery and make them feel more natural. We only have five nodes at the moment, but we plan to add more over time.
 
