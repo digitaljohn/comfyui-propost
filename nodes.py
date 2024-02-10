@@ -62,23 +62,7 @@ class ProPostVignette:
         batch_size, height, width, _ = image.shape
         result = torch.zeros_like(image)
 
-        for b in range(batch_size):
-            tensor_image = image[b].numpy()
-
-            # Apply vignette
-            vignette_image = self.apply_vignette(tensor_image, intensity, center_x, center_y)
-
-            tensor = torch.from_numpy(vignette_image).unsqueeze(0)
-            result[b] = tensor
-
-        return (result,)
-
-    def apply_vignette(self, image, vignette_strength, center_x_ratio, center_y_ratio):
-        if vignette_strength == 0:
-            return image
-
-        height, width, _ = image.shape
-
+        # Generate the vignette for each image in the batch
         # Create linear space but centered around the provided center point ratios
         x = np.linspace(-1, 1, width)
         y = np.linspace(-1, 1, height)
@@ -97,6 +81,21 @@ class ProPostVignette:
         radius = radius / (max_distance_to_corner * np.sqrt(2))  # Normalize radius
         opacity = np.clip(vignette_strength, 0, 1)
         vignette = 1 - radius * opacity
+
+        for b in range(batch_size):
+            tensor_image = image[b].numpy()
+
+            # Apply vignette
+            vignette_image = self.apply_vignette(tensor_image, vignette)
+
+            tensor = torch.from_numpy(vignette_image).unsqueeze(0)
+            result[b] = tensor
+
+        return (result,)
+
+    def apply_vignette(self, image, vignette):
+        if vignette_strength == 0:
+            return image
 
         # If image needs to be normalized (0-1 range)
         needs_normalization = image.max() > 1
@@ -206,6 +205,7 @@ class ProPostFilmGrain:
         out_image = filmgrainer.process(image, scale, src_gamma, 
             grain_power, shadows, highs, grain_type, 
             grain_sat, gray_scale, sharpen, seed)
+        
         return out_image
 
 
@@ -263,23 +263,7 @@ class ProPostRadialBlur:
         batch_size, height, width, _ = image.shape
         result = torch.zeros_like(image)
 
-        for b in range(batch_size):
-            tensor_image = image[b].numpy()
-
-            # Apply blur
-            blur_image = self.apply_radialblur(tensor_image, blur_strength, center_x, center_y, focus_spread, steps)
-
-            tensor = torch.from_numpy(blur_image).unsqueeze(0)
-            result[b] = tensor
-
-        return (result,)
-
-    def apply_radialblur(self, image, blur_strength, center_x_ratio, center_y_ratio, focus_spread, steps):
-        needs_normalization = image.max() > 1
-        if needs_normalization:
-            image = image.astype(np.float32) / 255
-        
-        height, width = image.shape[:2]
+        # Generate the vignette for each image in the batch
         center_x, center_y = int(width * center_x_ratio), int(height * center_y_ratio)
 
         # Calculate distances to all corners from the center
@@ -294,6 +278,22 @@ class ProPostRadialBlur:
         # Create and adjust radial mask
         X, Y = np.meshgrid(np.arange(width) - center_x, np.arange(height) - center_y)
         radial_mask = np.sqrt(X**2 + Y**2) / max_distance_to_corner
+
+        for b in range(batch_size):
+            tensor_image = image[b].numpy()
+
+            # Apply blur
+            blur_image = self.apply_radialblur(tensor_image, blur_strength, radial_mask, focus_spread, steps)
+
+            tensor = torch.from_numpy(blur_image).unsqueeze(0)
+            result[b] = tensor
+
+        return (result,)
+
+    def apply_radialblur(self, image, blur_strength, radial_mask, focus_spread, steps):
+        needs_normalization = image.max() > 1
+        if needs_normalization:
+            image = image.astype(np.float32) / 255
 
         blurred_images = processing_utils.generate_blurred_images(image, blur_strength, steps, focus_spread)
         final_image = processing_utils.apply_blurred_images(image, blurred_images, radial_mask)
