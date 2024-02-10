@@ -431,24 +431,24 @@ class ProPostApplyLUT:
         batch_size, height, width, _ = image.shape
         result = torch.zeros_like(image)
 
+        # Read the LUT
+        lut_path = os.path.join(dir_luts, lut_name)
+        lut = loading_utils.read_lut(lut_path, clip=True)
+
         for b in range(batch_size):
             tensor_image = image[b].numpy()
 
             # Apply LUT
-            lut_image = self.apply_lut(tensor_image, lut_name, strength, log)
+            lut_image = self.apply_lut(tensor_image, lut, strength, log)
 
             tensor = torch.from_numpy(lut_image).unsqueeze(0)
             result[b] = tensor
 
         return (result,)
 
-    def apply_lut(self, image, lut_name, strength, log):
+    def apply_lut(self, image, lut, strength, log):
         if strength == 0:
             return image
-
-        # Read the LUT
-        lut_path = os.path.join(dir_luts, lut_name)
-        lut = loading_utils.read_lut(lut_path, clip=True)
 
         # Apply the LUT
         is_non_default_domain = not np.array_equal(lut.domain, np.array([[0., 0., 0.], [1., 1., 1.]]))
