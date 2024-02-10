@@ -242,6 +242,12 @@ class ProPostRadialBlur:
                     "max": 1.0,
                     "step": 0.01
                 }),
+                "exponential_base": ("FLOAT", {
+                    "default": 1,
+                    "min": 1.0,
+                    "max": 8.0,
+                    "step": 0.1
+                }),
                 "steps": ("INT", {
                     "default": 5,
                     "min": 1,
@@ -259,7 +265,7 @@ class ProPostRadialBlur:
  
     CATEGORY = "Pro Post/Blur Effects"
  
-    def radialblur_image(self, image: torch.Tensor, blur_strength: float, center_focus_weight: float, center_x: float, center_y:float, steps: int):
+    def radialblur_image(self, image: torch.Tensor, blur_strength: float, center_focus_weight: float, center_x: float, center_y:float, exponential_base:float, steps: int):
         batch_size, height, width, _ = image.shape
         result = torch.zeros_like(image)
 
@@ -274,7 +280,7 @@ class ProPostRadialBlur:
 
         return (result,)
 
-    def apply_radialblur(self, image, blur_strength, center_focus_weight, center_x_ratio, center_y_ratio, steps):
+    def apply_radialblur(self, image, blur_strength, center_focus_weight, center_x_ratio, center_y_ratio, exponential_base, steps):
         needs_normalization = image.max() > 1
         if needs_normalization:
             image = image.astype(np.float32) / 255
@@ -296,7 +302,7 @@ class ProPostRadialBlur:
         radial_mask = np.sqrt(X**2 + Y**2) / max_distance_to_corner
         radial_mask = np.power(radial_mask, center_focus_weight)
 
-        blurred_images = processing_utils.generate_blurred_images(image, blur_strength, steps)
+        blurred_images = processing_utils.generate_blurred_images(image, blur_strength, steps, exponential_base)
         final_image = processing_utils.apply_blurred_images(image, blurred_images, radial_mask)
 
         if needs_normalization:
@@ -321,16 +327,22 @@ class ProPostDepthMapBlur:
                     "max": 256.0,
                     "step": 1.0
                 }),
-                "steps": ("INT", {
-                    "default": 5,
-                    "min": 1,
-                    "max": 32,
-                }),
                 "focal_depth": ("FLOAT", {
                     "default": 1.0,
                     "min": 0.0,
                     "max": 1.0,
                     "step": 0.01
+                }),
+                "exponential_base": ("FLOAT", {
+                    "default": 1,
+                    "min": 1.0,
+                    "max": 8.0,
+                    "step": 0.1
+                }),
+                "steps": ("INT", {
+                    "default": 5,
+                    "min": 1,
+                    "max": 32,
                 }),
             },
         }
@@ -344,7 +356,7 @@ class ProPostDepthMapBlur:
  
     CATEGORY = "Pro Post/Blur Effects"
  
-    def depthblur_image(self, image: torch.Tensor, depth_map: torch.Tensor, blur_strength: float, steps: int, focal_depth: float):
+    def depthblur_image(self, image: torch.Tensor, depth_map: torch.Tensor, blur_strength: float, focal_depth: float, exponential_base:float, steps: int):
         batch_size, height, width, _ = image.shape
         result = torch.zeros_like(image)
 
@@ -360,7 +372,7 @@ class ProPostDepthMapBlur:
 
         return (result,)
 
-    def apply_depthblur(self, image, depth_map, blur_strength, steps, focal_depth):
+    def apply_depthblur(self, image, depth_map, blur_strength, focal_depth, exponential_base, steps):
         # Normalize the input image if needed
         needs_normalization = image.max() > 1
         if needs_normalization:
@@ -379,7 +391,7 @@ class ProPostDepthMapBlur:
         depth_mask = np.clip(depth_mask / np.max(depth_mask), 0, 1)
 
         # Generate blurred versions of the image
-        blurred_images = processing_utils.generate_blurred_images(image, blur_strength, steps)
+        blurred_images = processing_utils.generate_blurred_images(image, blur_strength, steps, exponential_base)
 
         # Use the adjusted depth map as a mask for applying blurred images
         final_image = processing_utils.apply_blurred_images(image, blurred_images, depth_mask)

@@ -1,10 +1,12 @@
 import cv2
 import numpy as np
 
-def generate_blurred_images(image, blur_strength, steps):
+def generate_blurred_images(image, blur_strength, steps, exponential_base=2):
     blurred_images = []
     for step in range(1, steps + 1):
-        blur_size = max(1, int(blur_strength * step / steps))
+        # Apply an exponential function to calculate blur size
+        blur_factor = exponential_base ** (step / steps * blur_strength)
+        blur_size = max(1, int(blur_factor))
         blur_size = blur_size if blur_size % 2 == 1 else blur_size + 1  # Ensure blur_size is odd
         blurred_image = cv2.GaussianBlur(image, (blur_size, blur_size), 0)
         blurred_images.append(blurred_image)
