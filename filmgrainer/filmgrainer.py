@@ -39,11 +39,11 @@ def _getGrainMask(img_width:int, img_height:int, saturation:float, grayscale:boo
     filename = MASK_CACHE_PATH + "grain-%d-%d-%s-%s-%s-%d.png" % (
         img_width, img_height, str_sat, str(grain_size), str(grain_gauss), seed)
     if os.path.isfile(filename):
-        print("Reusing: %s" % filename)
+        # print("Reusing: %s" % filename)
         mask = Image.open(filename)
     else:
         mask = graingen.grainGen(img_width, img_height, grain_size, grain_gauss, sat, seed)
-        print("Saving: %s" % filename)
+        # print("Saving: %s" % filename)
         if not os.path.isdir(MASK_CACHE_PATH):
             os.mkdir(MASK_CACHE_PATH)
         mask.save(filename, format="png", compress_level=1)
@@ -60,19 +60,19 @@ def process(image, scale:float, src_gamma:float, grain_power:float, shadows:floa
     org_height = img.size[1]
     
     if scale != 1.0:
-        print("Scaling source image ...")
+        # print("Scaling source image ...")
         img = img.resize((int(org_width / scale), int(org_height / scale)),
                           resample = Image.LANCZOS)
     
     img_width = img.size[0]
     img_height = img.size[1]
-    print("Size: %d x %d" % (img_width, img_height))
+    # print("Size: %d x %d" % (img_width, img_height))
 
-    print("Calculating map ...")
+    # print("Calculating map ...")
     map = graingamma.Map.calculate(src_gamma, grain_power, shadows, highs)
     # map.saveToFile("map.png")
 
-    print("Calculating grain stock ...")
+    # print("Calculating grain stock ...")
     (grain_size, grain_gauss) = _grainTypes(grain_type)
     mask = _getGrainMask(img_width, img_height, grain_sat, gray_scale, grain_size, grain_gauss, seed)
 
@@ -83,7 +83,7 @@ def process(image, scale:float, src_gamma:float, grain_power:float, shadows:floa
     lookup = map.map
 
     if gray_scale:
-        print("Film graining image ... (grayscale)")
+        # print("Film graining image ... (grayscale)")
         for y in range(0, img_height):
             for x in range(0, img_width):
                 m = mask_pixels[x, y]
@@ -93,7 +93,7 @@ def process(image, scale:float, src_gamma:float, grain_power:float, shadows:floa
                 gray_lookup = lookup[gray, m]
                 img_pixels[x, y] = (gray_lookup, gray_lookup, gray_lookup)
     else:
-        print("Film graining image ...")
+        # print("Film graining image ...")
         for y in range(0, img_height):
             for x in range(0, img_width):
                 (mr, mg, mb) = mask_pixels[x, y]
@@ -104,11 +104,11 @@ def process(image, scale:float, src_gamma:float, grain_power:float, shadows:floa
                 img_pixels[x, y] = (r, g, b)
     
     if scale != 1.0:
-        print("Scaling image back to original size ...")
+        # print("Scaling image back to original size ...")
         img = img.resize((org_width, org_height), resample = Image.LANCZOS)
     
     if sharpen > 0:
-        print("Sharpening image: %d pass ..." % sharpen)
+        # print("Sharpening image: %d pass ..." % sharpen)
         for x in range(sharpen):
             img = img.filter(ImageFilter.SHARPEN)
 
