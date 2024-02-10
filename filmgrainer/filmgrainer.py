@@ -2,6 +2,7 @@
 
 from PIL import Image, ImageFilter
 import os
+import tempfile
 import numpy as np
 
 import filmgrainer.graingamma as graingamma
@@ -25,7 +26,7 @@ def _grainTypes(typ):
         raise ValueError("Unknown grain type: " + str(typ))
 
 # Grain mask cache
-MASK_CACHE_PATH = "/tmp/mask-cache/"
+MASK_CACHE_PATH = os.path.join(tempfile.gettempdir(), "mask-cache")
 
 def _getGrainMask(img_width:int, img_height:int, saturation:float, grayscale:bool, grain_size:float, grain_gauss:float, seed):
     if grayscale:
