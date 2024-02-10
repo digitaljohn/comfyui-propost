@@ -62,13 +62,13 @@ This filter allows you to blur the edges of the image. It has a few different op
 ![Pro Post Radial Blur Example](./examples/propost-radialblur.jpg)
 
 
-| Parameter            | Default   | Type    | Description                                                                   |
-|----------------------|-----------|---------|-------------------------------------------------------------------------------|
-| blur_strength        | `64.0`    | Float   | The intensity of the blur at the edges, with a range of 0.0 to 256.0.         |
-| center_focus_weight  | `1.0`     | Float   | How focused the blur is. A smaller value pinches the blur towards the center. |
-| center_x             | `0.5`     | Float   | The x-coordinate of the center of the blur. 0.0 to 1.0.                      |
-| center_y             | `0.5`     | Float   | The y-coordinate of the center of the blur. 0.0 to 1.0.                      |
-| steps                | `5`       | Integer | The number of steps to use when blurring the image. Higher numbers are slower.|
+| Parameter            | Default   | Type    | Description                                                                    |
+|----------------------|-----------|---------|--------------------------------------------------------------------------------|
+| blur_strength        | `64.0`    | Float   | The intensity of the blur at the edges, with a range of 0.0 to 256.0.          |
+| center_x             | `0.5`     | Float   | The x-coordinate of the center of the blur. 0.0 to 1.0.                        |
+| center_y             | `0.5`     | Float   | The y-coordinate of the center of the blur. 0.0 to 1.0.                        |
+| focus_spread         | `1.0`     | Float   | The spread of the area of focus. A larger value makes more of the image sharp. |
+| steps                | `5`       | Integer | The number of steps to use when blurring the image. Higher numbers are slower. |
 
 > Note: Using steps set to `1` can create some dreamy effects as seen below with a high edge_blur_strength.
 
@@ -85,12 +85,13 @@ This filter allows you to blur the image based on a depth map. You can use this 
 ![Pro Post Depth Map Blur Workflow](./examples/propost-depthmapblur-workflow.png)
 
 
-| Parameter            | Default   | Type    | Description                                                                   |
-|----------------------|-----------|---------|-------------------------------------------------------------------------------|
-| depth_map            | n/a       | Image   | The depth map to use for the blur.                                            |
-| blur_strength        | `64.0`    | Float   | The intensity of the blur at the edges, with a range of 0.0 to 256.0.         |
-| steps                | `5`       | Integer | The number of steps to use when blurring the image. Higher numbers are slower.|
-| focal_depth          | `1.0`     | Float   | The focal depth of the blur. `1.0` is the closest, `0.0` is the farthest.     |
+| Parameter            | Default   | Type    | Description                                                                    |
+|----------------------|-----------|---------|--------------------------------------------------------------------------------|
+| depth_map            | n/a       | Image   | The depth map to use for the blur.                                             |
+| blur_strength        | `64.0`    | Float   | The intensity of the blur, with a range of 0.0 to 256.0.                       |
+| focal_depth          | `1.0`     | Float   | The focal depth of the blur. `1.0` is the closest, `0.0` is the farthest.      |
+| focus_spread         | `1.0`     | Float   | The spread of the area of focus. A larger value makes more of the image sharp. |
+| steps                | `5`       | Integer | The number of steps to use when blurring the image. Higher numbers are slower. |
 
 
 ### Apply LUT
