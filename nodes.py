@@ -224,12 +224,6 @@ class ProPostRadialBlur:
                     "max": 256.0,
                     "step": 1.0
                 }),
-                "center_focus_weight": ("FLOAT", {
-                    "default": 1.0,
-                    "min": 0.0,
-                    "max": 8.0,
-                    "step": 0.1
-                }),
                 "center_x": ("FLOAT", {
                     "default": 0.5,
                     "min": 0.0,
@@ -242,9 +236,9 @@ class ProPostRadialBlur:
                     "max": 1.0,
                     "step": 0.01
                 }),
-                "exponential_base": ("FLOAT", {
+                "focus_spread": ("FLOAT", {
                     "default": 1,
-                    "min": 1.0,
+                    "min": 0.1,
                     "max": 8.0,
                     "step": 0.1
                 }),
@@ -265,7 +259,7 @@ class ProPostRadialBlur:
  
     CATEGORY = "Pro Post/Blur Effects"
  
-    def radialblur_image(self, image: torch.Tensor, blur_strength: float, center_focus_weight: float, center_x: float, center_y:float, exponential_base:float, steps: int):
+    def radialblur_image(self, image: torch.Tensor, blur_strength: float, center_x: float, center_y:float, focus_spread:float, steps: int):
         batch_size, height, width, _ = image.shape
         result = torch.zeros_like(image)
 
@@ -273,14 +267,14 @@ class ProPostRadialBlur:
             tensor_image = image[b].numpy()
 
             # Apply blur
-            blur_image = self.apply_radialblur(tensor_image, blur_strength, center_focus_weight, center_x, center_y, steps)
+            blur_image = self.apply_radialblur(tensor_image, blur_strength, center_x, center_y, focus_spread, steps)
 
             tensor = torch.from_numpy(blur_image).unsqueeze(0)
             result[b] = tensor
 
         return (result,)
 
-    def apply_radialblur(self, image, blur_strength, center_focus_weight, center_x_ratio, center_y_ratio, exponential_base, steps):
+    def apply_radialblur(self, image, blur_strength, center_x_ratio, center_y_ratio, focus_spread, steps):
         needs_normalization = image.max() > 1
         if needs_normalization:
             image = image.astype(np.float32) / 255
@@ -300,9 +294,8 @@ class ProPostRadialBlur:
         # Create and adjust radial mask
         X, Y = np.meshgrid(np.arange(width) - center_x, np.arange(height) - center_y)
         radial_mask = np.sqrt(X**2 + Y**2) / max_distance_to_corner
-        radial_mask = np.power(radial_mask, center_focus_weight)
 
-        blurred_images = processing_utils.generate_blurred_images(image, blur_strength, steps, exponential_base)
+        blurred_images = processing_utils.generate_blurred_images(image, blur_strength, steps, focus_spread)
         final_image = processing_utils.apply_blurred_images(image, blurred_images, radial_mask)
 
         if needs_normalization:
@@ -333,7 +326,7 @@ class ProPostDepthMapBlur:
                     "max": 1.0,
                     "step": 0.01
                 }),
-                "exponential_base": ("FLOAT", {
+                "focus_spread": ("FLOAT", {
                     "default": 1,
                     "min": 1.0,
                     "max": 8.0,
@@ -356,7 +349,7 @@ class ProPostDepthMapBlur:
  
     CATEGORY = "Pro Post/Blur Effects"
  
-    def depthblur_image(self, image: torch.Tensor, depth_map: torch.Tensor, blur_strength: float, focal_depth: float, exponential_base:float, steps: int):
+    def depthblur_image(self, image: torch.Tensor, depth_map: torch.Tensor, blur_strength: float, focal_depth: float, focus_spread:float, steps: int):
         batch_size, height, width, _ = image.shape
         result = torch.zeros_like(image)
 
@@ -365,14 +358,14 @@ class ProPostDepthMapBlur:
             tensor_image_depth = depth_map[b].numpy()
 
             # Apply blur
-            blur_image = self.apply_depthblur(tensor_image, tensor_image_depth, blur_strength, steps, focal_depth)
+            blur_image = self.apply_depthblur(tensor_image, tensor_image_depth, blur_strength, focal_depth, focus_spread, steps)
 
             tensor = torch.from_numpy(blur_image).unsqueeze(0)
             result[b] = tensor
 
         return (result,)
 
-    def apply_depthblur(self, image, depth_map, blur_strength, focal_depth, exponential_base, steps):
+    def apply_depthblur(self, image, depth_map, blur_strength, focal_depth, focus_spread, steps):
         # Normalize the input image if needed
         needs_normalization = image.max() > 1
         if needs_normalization:
@@ -391,7 +384,7 @@ class ProPostDepthMapBlur:
         depth_mask = np.clip(depth_mask / np.max(depth_mask), 0, 1)
 
         # Generate blurred versions of the image
-        blurred_images = processing_utils.generate_blurred_images(image, blur_strength, steps, exponential_base)
+        blurred_images = processing_utils.generate_blurred_images(image, blur_strength, steps, focus_spread)
 
         # Use the adjusted depth map as a mask for applying blurred images
         final_image = processing_utils.apply_blurred_images(image, blurred_images, depth_mask)
