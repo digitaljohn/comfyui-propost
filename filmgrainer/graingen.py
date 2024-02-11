@@ -1,28 +1,39 @@
 from PIL import Image
 import random
 import numpy as np
+import torch
+from torchvision.transforms import ToPILImage
 
 def _makeGrayNoise(width, height, power):
-    buffer = np.zeros([height, width], dtype=int)
+    # Generate Gaussian noise with mean 128 and standard deviation = power
+    # Note: torch.randn_like is not used here because we're creating the tensor from scratch
+    noise = torch.normal(mean=128, std=power, size=(height, width)).clamp(0, 255)
 
-    for y in range(0, height):
-        for x in range(0, width):
-            buffer[y, x] = random.gauss(128, power)
-    buffer = buffer.clip(0, 255)
-    return Image.fromarray(buffer.astype(dtype=np.uint8))
+    # Convert to uint8, since we're simulating an 8-bit grayscale image
+    noise = noise.to(torch.uint8)
+
+    # Convert the tensor to a PIL image for compatibility with many image processing libraries
+    to_pil_image = ToPILImage()
+    noise_image = to_pil_image(noise.unsqueeze(0))  # Add a channel dimension
+
+    return noise_image
 
 def _makeRgbNoise(width, height, power, saturation):
-    buffer = np.zeros([height, width, 3], dtype=int)
-    intens_power = power * (1.0 - saturation)
-    for y in range(0, height):
-        for x in range(0, width):
-            intens = random.gauss(128, intens_power)
-            buffer[y, x, 0] = random.gauss(0, power) * saturation + intens
-            buffer[y, x, 1] = random.gauss(0, power) * saturation + intens
-            buffer[y, x, 2] = random.gauss(0, power) * saturation + intens
+    # Initialize the noise tensor for RGB channels
+    noise_base = torch.normal(mean=128, std=power * (1.0 - saturation), size=(height, width, 1))
+    noise_color = torch.normal(mean=0, std=power * saturation, size=(height, width, 3))
+    
+    # Combine base intensity and color noise, ensuring values are within byte range
+    noise = (noise_base + noise_color).clamp(0, 255)
+    
+    # Convert the noise tensor to uint8 since we're simulating an 8-bit color image
+    noise = noise.to(torch.uint8)
 
-    buffer = buffer.clip(0, 255)
-    return Image.fromarray(buffer.astype(dtype=np.uint8))
+    # Convert the tensor to a PIL image
+    to_pil_image = ToPILImage()
+    noise_image = to_pil_image(noise.permute(2, 0, 1))  # Reorder dimensions to CxHxW for PIL
+
+    return noise_image
 
 
 def grainGen(width, height, grain_size, power, saturation, seed = 1):
