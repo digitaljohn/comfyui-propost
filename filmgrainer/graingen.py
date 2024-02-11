@@ -4,8 +4,13 @@ import torch
 from torchvision.transforms import ToPILImage
 import time
 
-def _makeGrayNoise(width, height, power):
+def _makeGrayNoise(width, height, power, generator=None):
     # Generate Gaussian noise with mean 128 and standard deviation = power
+
+    # Ensure a generator is used if provided
+    if generator is None:
+        generator = torch.Generator()
+
     # Note: torch.randn_like is not used here because we're creating the tensor from scratch
     noise = torch.normal(mean=128, std=power, size=(height, width)).clamp(0, 255)
 
@@ -18,7 +23,11 @@ def _makeGrayNoise(width, height, power):
 
     return noise_image
 
-def _makeRgbNoise(width, height, power, saturation):
+def _makeRgbNoise(width, height, power, saturation, generator=None):
+    # Ensure a generator is used if provided
+    if generator is None:
+        generator = torch.Generator()
+
     # Initialize the noise tensor for RGB channels
     noise_base = torch.normal(mean=128, std=power * (1.0 - saturation), size=(height, width, 1))
     noise_color = torch.normal(mean=0, std=power * saturation, size=(height, width, 3))
@@ -38,6 +47,9 @@ def _makeRgbNoise(width, height, power, saturation):
 
 def grainGen(width, height, grain_size, power, saturation, seed=1):
     start_time = time.time()  # Start time of the function execution
+
+    # Create a PyTorch generator with the specified seed
+    generator = torch.Generator().manual_seed(seed)
     
     # A grain_size of 1 means the noise buffer will be made 1:1
     # A grain_size of 2 means the noise buffer will be resampled 1:2
@@ -48,11 +60,11 @@ def grainGen(width, height, grain_size, power, saturation, seed=1):
     if saturation < 0.0:
         print("Making B/W grain, width: %d, height: %d, grain-size: %s, power: %s, seed: %d" % (
             noise_width, noise_height, str(grain_size), str(power), seed))
-        img = _makeGrayNoise(noise_width, noise_height, power)
+        img = _makeGrayNoise(noise_width, noise_height, power, generator)
     else:
         print("Making RGB grain, width: %d, height: %d, saturation: %s, grain-size: %s, power: %s, seed: %d" % (
             noise_width, noise_height, str(saturation), str(grain_size), str(power), seed))
-        img = _makeRgbNoise(noise_width, noise_height, power, saturation)
+        img = _makeRgbNoise(noise_width, noise_height, power, saturation, generator)
 
     # Resample
     if grain_size != 1:
