@@ -1,8 +1,8 @@
 from PIL import Image
 import random
-import numpy as np
 import torch
 from torchvision.transforms import ToPILImage
+import time
 
 def _makeGrayNoise(width, height, power):
     # Generate Gaussian noise with mean 128 and standard deviation = power
@@ -36,7 +36,9 @@ def _makeRgbNoise(width, height, power, saturation):
     return noise_image
 
 
-def grainGen(width, height, grain_size, power, saturation, seed = 1):
+def grainGen(width, height, grain_size, power, saturation, seed=1):
+    start_time = time.time()  # Start time of the function execution
+    
     # A grain_size of 1 means the noise buffer will be made 1:1
     # A grain_size of 2 means the noise buffer will be resampled 1:2
     noise_width = int(width / grain_size)
@@ -53,8 +55,11 @@ def grainGen(width, height, grain_size, power, saturation, seed = 1):
         img = _makeRgbNoise(noise_width, noise_height, power, saturation)
 
     # Resample
-    if grain_size != 1.0:
-        img = img.resize((width, height), resample = Image.LANCZOS)
+    if grain_size != 1:
+        img = img.resize((width, height), resample=Image.LANCZOS)
+    
+    end_time = time.time()  # End time of the function execution
+    print("Execution Time: {:.2f} seconds".format(end_time - start_time))
 
     return img
 
