@@ -1,0 +1,15 @@
+[project]
+name = "comfyui-propost"
+description = "A set of custom ComfyUI nodes for performing basic post-processing effects including Film Grain and Vignette. These effects can help to take the edge off AI imagery and make them feel more natural."
+version = "1.0.0"
+license = "LICENSE"
+dependencies = ["numpy", "Pillow", "opencv-python", "colour-science"]
+
+[project.urls]
+Repository = "https://github.com/digitaljohn/comfyui-propost"
+#  Used by Comfy Registry https://comfyregistry.org
+
+[tool.comfy]
+PublisherId = ""
+DisplayName = "comfyui-propost"
+Icon = ""
