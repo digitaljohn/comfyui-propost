@@ -357,18 +357,16 @@ class ProPostDepthMapBlur:
  
     FUNCTION = "depthblur_image"
     DESCRIPTION = """
-    blur_strength: 表示模糊强度。这个参数控制模糊效果的总体强度，值越大，图像的模糊程度越高。
-    focal_depth: 表示焦点深度。这个参数用于确定图像中的哪个深度层次应该保持清晰，而其他层次则根据深度差异进行模糊处理。
-    focus_spread: 表示焦点扩散范围。这个参数控制在焦点深度附近的模糊过渡区域的大小，值越大，过渡区域越宽，模糊效果在焦点附近的扩散也就越平滑。
-    steps: 表示模糊处理的步骤数。这个参数决定了模糊效果的计算精度，步骤数越多，模糊效果越精细，但同时计算量也会增加。
-    focal_range: 表示焦点范围。这个参数用于调整焦点深度内保持清晰的深度范围，值越大，焦点深度附近保持清晰的区域越宽。
-    mask_blur: 表示用于模糊深度图的掩码模糊强度。这个参数控制深度图模糊处理的强度，用于在计算最终的模糊效果前，对深度图进行预处理，以实现更自然的模糊过渡效果。
-    
     blur_strength: Represents the blur strength. This parameter controls the overall intensity of the blur effect; the higher the value, the more blurred the image becomes.
+
     focal_depth: Represents the focal depth. This parameter is used to determine which depth level in the image should remain sharp, while other levels are blurred based on depth differences.
+
     focus_spread: Represents the focus spread range. This parameter controls the size of the blur transition area near the focal depth; the larger the value, the wider the transition area, and the smoother the blur effect spreads around the focus.
+
     steps: Represents the number of steps in the blur process. This parameter determines the calculation precision of the blur effect; the more steps, the finer the blur effect, but this also increases the computational load.
+
     focal_range: Represents the focal range. This parameter is used to adjust the depth range within the focal depth that remains sharp; the larger the value, the wider the area around the focal depth that remains sharp.
+    
     mask_blur: Represents the mask blur strength for blurring the depth map. This parameter controls the intensity of the depth map's blur treatment, used for preprocessing the depth map before calculating the final blur effect, to achieve a more natural blur transition.
     """
     #OUTPUT_NODE = False

@@ -92,7 +92,8 @@ This filter allows you to blur the image based on a depth map. You can use this 
 | focal_depth          | `1.0`     | Float   | The focal depth of the blur. `1.0` is the closest, `0.0` is the farthest.      |
 | focus_spread         | `1.0`     | Float   | The spread of the area of focus. A larger value makes more of the image sharp. |
 | steps                | `5`       | Integer | The number of steps to use when blurring the image. Higher numbers are slower. |
-
+| focal_range          | `0.0`     | Float   | `1.0` means all areas clear, `0.0` means only focal point is clear.            |
+| mask_blur            | `1`       | Integer | Mask blur strength (1 to 127).`1` means no blurring.                           |
 
 ### Apply LUT
 
