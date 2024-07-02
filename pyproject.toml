@@ -10,6 +10,6 @@ Repository = "https://github.com/digitaljohn/comfyui-propost"
 #  Used by Comfy Registry https://comfyregistry.org
 
 [tool.comfy]
-PublisherId = ""
+PublisherId = "digital"
 DisplayName = "comfyui-propost"
 Icon = ""
