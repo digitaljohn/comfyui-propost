@@ -194,7 +194,7 @@ class ProPostFilmGrain:
             tensor_image = image[b].numpy()
 
             # Apply vignette
-            vignette_image = self.apply_filmgrain(tensor_image, gray_scale, grain_type_index, grain_sat, grain_power, shadows, highs, scale, sharpen, src_gamma, seed+b)
+            vignette_image = self.apply_filmgrain(tensor_image, gray_scale, grain_type_index, grain_sat, grain_power, shadows, highs, scale, sharpen, src_gamma, seed+(b*10))
 
             tensor = torch.from_numpy(vignette_image).unsqueeze(0)
             result[b] = tensor
