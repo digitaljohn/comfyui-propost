@@ -2,7 +2,7 @@
 name = "comfyui-propost"
 description = "A set of custom ComfyUI nodes for performing basic post-processing effects including Film Grain and Vignette. These effects can help to take the edge off AI imagery and make them feel more natural."
 version = "1.1.0"
-license = "MIT"
+license = { text = "MIT License" }
 dependencies = ["numpy", "Pillow", "opencv-python", "colour-science"]
 
 [project.urls]
