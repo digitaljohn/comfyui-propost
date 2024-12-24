@@ -168,7 +168,7 @@ class ProPostFilmGrain:
                 "seed": ("INT", {
                     "default": 1,
                     "min": 1,
-                    "max": 1000
+                    "max": 0xffffffffffffffff
                 }),
             },
         }
