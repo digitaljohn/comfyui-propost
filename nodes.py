@@ -301,7 +301,7 @@ class ProPostRadialBlur:
         if needs_normalization:
             final_image = np.clip(final_image * 255, 0, 255).astype(np.uint8)
 
-        return final_image
+        return np.clip(final_image, 0, 1)
 
 
 class ProPostDepthMapBlur:
