@@ -1,8 +1,11 @@
-import os
-import numpy as np
-from colour.io.luts.iridas_cube import read_LUT_IridasCube, LUT3D, LUT3x1D
+from pathlib import Path
+from typing import Union
 
-def read_lut(lut_path, clip=False):
+import numpy as np
+from colour.io.luts.iridas_cube import LUT3D, LUT3x1D, read_LUT_IridasCube
+
+
+def read_lut(lut_path: str, clip: bool = False) -> Union[LUT3x1D, LUT3D]:
     """
     Reads a LUT from the specified path, returning instance of LUT3D or LUT3x1D
 
@@ -11,7 +14,7 @@ def read_lut(lut_path, clip=False):
         upper bounds
     """
     lut: Union[LUT3x1D, LUT3D] = read_LUT_IridasCube(lut_path)
-    lut.name = os.path.splitext(os.path.basename(lut_path))[0]  # use base filename instead of internal LUT name
+    lut.name = Path(lut_path).stem  # use base filename instead of internal LUT name
 
     if clip:
         if lut.domain[0].max() == lut.domain[0].min() and lut.domain[1].max() == lut.domain[1].min():

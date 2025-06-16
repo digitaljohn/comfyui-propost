@@ -1,8 +1,10 @@
-from PIL import Image
 import random
-import numpy as np
 
-def _makeGrayNoise(width, height, power):
+import numpy as np
+from PIL import Image
+
+
+def _makeGrayNoise(width: int, height: int, power: float) -> Image.Image:
     buffer = np.zeros([height, width], dtype=int)
 
     for y in range(0, height):
@@ -11,7 +13,8 @@ def _makeGrayNoise(width, height, power):
     buffer = buffer.clip(0, 255)
     return Image.fromarray(buffer.astype(dtype=np.uint8))
 
-def _makeRgbNoise(width, height, power, saturation):
+
+def _makeRgbNoise(width: int, height: int, power: float, saturation: float) -> Image.Image:
     buffer = np.zeros([height, width, 3], dtype=int)
     intens_power = power * (1.0 - saturation)
     for y in range(0, height):
@@ -25,7 +28,14 @@ def _makeRgbNoise(width, height, power, saturation):
     return Image.fromarray(buffer.astype(dtype=np.uint8))
 
 
-def grainGen(width, height, grain_size, power, saturation, seed = 1):
+def grainGen(
+    width: int,
+    height: int,
+    grain_size: float,
+    power: float,
+    saturation: float,
+    seed: int = 1,
+) -> Image.Image:
     # A grain_size of 1 means the noise buffer will be made 1:1
     # A grain_size of 2 means the noise buffer will be resampled 1:2
     noise_width = int(width / grain_size)
@@ -33,23 +43,20 @@ def grainGen(width, height, grain_size, power, saturation, seed = 1):
     random.seed(seed)
 
     if saturation < 0.0:
-        print("Making B/W grain, width: %d, height: %d, grain-size: %s, power: %s, seed: %d" % (
-            noise_width, noise_height, str(grain_size), str(power), seed))
         img = _makeGrayNoise(noise_width, noise_height, power)
     else:
-        print("Making RGB grain, width: %d, height: %d, saturation: %s, grain-size: %s, power: %s, seed: %d" % (
-            noise_width, noise_height, str(saturation), str(grain_size), str(power), seed))
         img = _makeRgbNoise(noise_width, noise_height, power, saturation)
 
     # Resample
     if grain_size != 1.0:
-        img = img.resize((width, height), resample = Image.LANCZOS)
+        img = img.resize((width, height), resample=Image.LANCZOS)
 
     return img
 
 
 if __name__ == "__main__":
     import sys
+
     if len(sys.argv) == 8:
         width = int(sys.argv[2])
         height = int(sys.argv[3])

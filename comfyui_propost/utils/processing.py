@@ -1,20 +1,31 @@
 import cv2
 import numpy as np
 
-def generate_blurred_images(image, blur_strength, steps, focus_spread=1):
-    blurred_images = []
+
+def generate_blurred_images(
+    image: np.ndarray,
+    blur_strength: float,
+    steps: int,
+    focus_spread: float = 1.0,
+) -> list[np.ndarray]:
+    blurred_images: list[np.ndarray] = []
     for step in range(1, steps + 1):
         # Adjust the curve based on the curve_weight
         blur_factor = (step / steps) ** focus_spread * blur_strength
         blur_size = max(1, int(blur_factor))
         blur_size = blur_size if blur_size % 2 == 1 else blur_size + 1  # Ensure blur_size is odd
-        
+
         # Apply Gaussian Blur
         blurred_image = cv2.GaussianBlur(image, (blur_size, blur_size), 0)
         blurred_images.append(blurred_image)
     return blurred_images
 
-def apply_blurred_images(image, blurred_images, mask):
+
+def apply_blurred_images(
+    image: np.ndarray,
+    blurred_images: list[np.ndarray],
+    mask: np.ndarray,
+) -> np.ndarray:
     steps = len(blurred_images)  # Calculate the number of steps based on the blurred images provided
     final_image = np.zeros_like(image)
     step_size = 1.0 / steps
