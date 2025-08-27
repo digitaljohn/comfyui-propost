@@ -11,7 +11,7 @@ from .utils import loading as loading_utils
 current_file_directory = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(current_file_directory)
 
-import filmgrainer.filmgrainer as filmgrainer
+from .filmgrainer import filmgrainer
 
 # Create the directory for the LUTs
 dir_luts = os.path.join(folder_paths.models_dir, "luts")
